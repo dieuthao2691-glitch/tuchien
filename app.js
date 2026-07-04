@@ -53,15 +53,97 @@ function openModal(modalId) {
     if (modal) {
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        // Restore survey draft if opening survey modal
+        if (modalId === 'survey-modal') {
+            restoreSurveyDraft();
+        }
     }
 }
 
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
+        // Save draft if closing survey modal before submission
+        if (modalId === 'survey-modal') {
+            saveSurveyDraft();
+        }
         modal.classList.remove('active');
         document.body.style.overflow = '';
     }
+}
+
+// ─────────────────────────────────────────────────
+//  SURVEY DRAFT PERSISTENCE (localStorage)
+// ─────────────────────────────────────────────────
+const DRAFT_KEY = 'tuchien_survey_draft';
+
+function saveSurveyDraft() {
+    const form = document.getElementById('landingSurveyForm');
+    if (!form) return;
+
+    const draft = {};
+
+    // Text / tel / email inputs
+    ['sv-modal-name', 'sv-modal-phone', 'sv-modal-email'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) draft[id] = el.value;
+    });
+
+    // "Khác" text inputs
+    ['sv-q3-other', 'sv-q4-other', 'sv-q5-other'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            draft[id + '_value'] = el.value;
+            draft[id + '_visible'] = (el.style.display !== 'none');
+        }
+    });
+
+    // Checkbox states (all named checkboxes in the survey form)
+    form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        const key = 'cb__' + (cb.name || '') + '__' + cb.value;
+        draft[key] = cb.checked;
+    });
+
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function restoreSurveyDraft() {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+
+    let draft;
+    try { draft = JSON.parse(raw); } catch(e) { return; }
+
+    const form = document.getElementById('landingSurveyForm');
+    if (!form) return;
+
+    // Text inputs
+    ['sv-modal-name', 'sv-modal-phone', 'sv-modal-email'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && draft[id] !== undefined) el.value = draft[id];
+    });
+
+    // "Khác" text inputs + visibility
+    ['sv-q3-other', 'sv-q4-other', 'sv-q5-other'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (draft[id + '_value'] !== undefined) el.value = draft[id + '_value'];
+            if (draft[id + '_visible']) {
+                el.style.display = 'block';
+                el.required = true;
+            }
+        }
+    });
+
+    // Checkboxes
+    form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        const key = 'cb__' + (cb.name || '') + '__' + cb.value;
+        if (draft[key] !== undefined) cb.checked = draft[key];
+    });
+}
+
+function clearSurveyDraft() {
+    localStorage.removeItem(DRAFT_KEY);
 }
 
 function openTourModal() {
@@ -235,139 +317,110 @@ function handleTourSubmit(event) {
     if (payName) payName.value = name;
     if (payPhone) {
         payPhone.value = phone;
-        // Trigger input event to update QR message
-        payPhone.dispatchEvent(new Event('input'));
     }
-    
     document.getElementById('tourForm').reset();
 }
 
 // ─────────────────────────────────────────────────
-//  INTERACTIVE QUIZ LOGIC (Multiple-choice, manual advance)
+//  SURVEY MODAL LOGIC (Multi-select Chips & AJAX Submit)
 // ─────────────────────────────────────────────────
 
-// Stores ARRAYS of selected values per step
-let quizAnswers = {
-    step1: [],
-    step2: [],
-    step3: []
-};
-
-// Toggle .selected on option buttons (multiple choice, no auto-advance)
-document.querySelectorAll('.option-btn').forEach(button => {
-    button.addEventListener('click', () => {
-        button.classList.toggle('selected');
-    });
-});
-
-// Navigate to a step (show it, hide all others)
-function goToStep(stepId) {
-    document.querySelectorAll('.quiz-step').forEach(step => {
-        step.classList.remove('active');
-    });
-    const target = document.getElementById(stepId);
-    if (target) target.classList.add('active');
-}
-
-// Collect selected answers from a step and advance to next step
-function advanceQuiz(currentStepId, nextStepId) {
-    const currentStep = document.getElementById(currentStepId);
-    if (!currentStep) return;
-
-    // Collect all selected option values in the current step
-    const selectedBtns = currentStep.querySelectorAll('.option-btn.selected');
-    const selectedValues = Array.from(selectedBtns).map(btn => btn.getAttribute('data-value'));
-    quizAnswers[currentStepId] = selectedValues;
-
-    if (nextStepId === 'stepResult') {
-        calculateQuizResult();
+function toggleOtherText(checkbox, otherInputId) {
+    const otherInput = document.getElementById(otherInputId);
+    if (!otherInput) return;
+    if (checkbox.checked) {
+        otherInput.style.display = 'block';
+        otherInput.focus();
+        otherInput.required = true;
     } else {
-        goToStep(nextStepId);
+        otherInput.style.display = 'none';
+        otherInput.value = '';
+        otherInput.required = false;
     }
 }
 
-// Go back to previous step and clear current step's selections
-function goBackToStep(prevStepId) {
-    // Find and deselect all currently visible options in the active step
-    const activeStep = document.querySelector('.quiz-step.active');
-    if (activeStep) {
-        activeStep.querySelectorAll('.option-btn.selected').forEach(btn => {
-            btn.classList.remove('selected');
-        });
-        // Clear stored answers for this step
-        quizAnswers[activeStep.id] = [];
-    }
-    goToStep(prevStepId);
-}
+function submitLandingSurvey(event) {
+    event.preventDefault();
+    const form = event.target;
+    const submitBtn = document.getElementById('survey-submit-btn');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '⏳ Đang gửi thông tin...';
+    submitBtn.disabled = true;
 
-// Reset entire quiz
-function resetQuiz() {
-    quizAnswers = { step1: [], step2: [], step3: [] };
-    // Clear all .selected states
-    document.querySelectorAll('.option-btn.selected').forEach(btn => {
-        btn.classList.remove('selected');
+    // Gather form data
+    const formData = new FormData(form);
+
+    const name = formData.get('Họ tên');
+    const phone = formData.get('Số điện thoại / Zalo');
+    const email = formData.get('Email');
+    
+    // Collect checked options manually to display a nice list in the summary modal
+    const problems = Array.from(form.querySelectorAll('input[name="Vấn đề sức khỏe"]:checked')).map(el => {
+        if (el.value === 'Khác') {
+            return 'Khác: ' + document.getElementById('sv-q3-other').value.trim();
+        }
+        return el.value;
     });
-    goToStep('step1');
-}
+    
+    const goals = Array.from(form.querySelectorAll('input[name="Mong muốn cải thiện"]:checked')).map(el => {
+        if (el.value === 'Khác') {
+            return 'Khác: ' + document.getElementById('sv-q4-other').value.trim();
+        }
+        return el.value;
+    });
+    
+    const times = Array.from(form.querySelectorAll('input[name="Thời gian sẵn có"]:checked')).map(el => {
+        if (el.value === 'Khác') {
+            return 'Khác: ' + document.getElementById('sv-q5-other').value.trim();
+        }
+        return el.value;
+    });
 
-// Calculate result based on collected multi-select answers
-function calculateQuizResult() {
-    const s1 = quizAnswers.step1; // array
-    const s2 = quizAnswers.step2; // array
-    const s3 = quizAnswers.step3; // array
-
-    let recName = '';
-    let recPrice = 0;
-    let titleText = '';
-    let descText = '';
-
-    const has = (arr, val) => arr.includes(val);
-
-    // Priority logic: most comprehensive need → intensive package
-    const wantsAll = s1.length >= 2 || (s1.length >= 1 && s2.length >= 2 && s3.length >= 2);
-    const wantsNature = has(s1, 'disconnection') || has(s2, 'trip') || has(s3, 'nature');
-    const wantsMental = has(s1, 'mental') || has(s2, 'weekend') || has(s3, 'yoga');
-    const wantsPhysical = has(s1, 'physical') || has(s3, 'herbs');
-
-    if (wantsAll) {
-        recName = 'Gói Trị Liệu Chuyên Sâu Túc Hiên';
-        recPrice = 4500000;
-        titleText = 'Lộ trình Chuyên sâu Toàn diện';
-        descText = 'Cơ thể và tâm trí của bạn đang cần một giải pháp kết hợp bài bản giữa Yoga cổ điển Ấn Độ, Y học cổ truyền và trị liệu tâm lý sâu sắc. Gói chuyên sâu của Túc Hiên được thiết kế riêng cho bạn.';
-    } else if (wantsNature) {
-        recName = 'Trải Nghiệm Thiên Nhiên Phục Hồi';
-        recPrice = 1000000;
-        titleText = 'Hành trình phục hồi năng lượng xanh';
-        descText = 'Bạn đang thiếu kết nối với thiên nhiên và cần ngắt màn hình. Một chuyến trekking nhẹ nhàng tại suối rừng cùng các kỹ thuật thở ngoài trời sẽ giúp cơ thể bạn sạc lại năng lượng tự nhiên.';
-    } else if (wantsMental) {
-        recName = 'Workshop Chuyên Đề Thực Tế';
-        recPrice = 350000;
-        titleText = 'Cải thiện Thể tạng & Khắc phục Đau mỏi';
-        descText = 'Áp lực tâm lý và mệt mỏi tinh thần là vấn đề cốt lõi của bạn. Tham gia các buổi workshop cuối tuần giúp bạn thực hành Yoga cổ điển, nhận biết thể tạng và tự chăm sóc cơ xương khớp tại nhà.';
-    } else {
-        recName = 'Thảo Dược & Y Học Cổ Truyền';
-        recPrice = 500000;
-        titleText = 'Thảo dược & Trị liệu Y học cổ truyền';
-        descText = 'Cơ thể bạn có dấu hiệu mất cân bằng thể chất. Trị liệu bằng xoa bóp bấm huyệt kết hợp các loại thảo dược ăn/uống/xông/tắm sẽ giúp khai thông và phục hồi sức sống tự nhiên.';
+    // Populate survey-submitted-summary in survey-thankyou-modal
+    const summaryEl = document.getElementById('survey-submitted-summary');
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <strong>• Họ và Tên:</strong> ${name}<br>
+            <strong>• Số điện thoại / Zalo:</strong> ${phone}<br>
+            <strong>• Email:</strong> ${email}<br>
+            <strong>• Vấn đề sức khỏe:</strong> ${problems.join(', ') || 'Chưa chọn'}<br>
+            <strong>• Mong muốn cải thiện:</strong> ${goals.join(', ') || 'Chưa chọn'}<br>
+            <strong>• Thời gian sẵn sàng:</strong> ${times.join(', ') || 'Chưa chọn'}
+        `;
     }
 
-    // Render result
-    document.getElementById('resultTitle').textContent = titleText;
-    document.getElementById('resultDesc').textContent = descText;
-    document.getElementById('recommendedServiceName').textContent = recName;
-    document.getElementById('recommendedServicePrice').textContent = recPrice.toLocaleString('vi-VN') + 'đ';
-
-    // Hook pay button dynamically
-    const btnQuizPay = document.getElementById('btnQuizPay');
-    if (btnQuizPay) {
-        const newBtn = btnQuizPay.cloneNode(true);
-        btnQuizPay.parentNode.replaceChild(newBtn, btnQuizPay);
-        newBtn.addEventListener('click', () => {
-            openPaymentModal(recName, recPrice);
+    // Submit form via fetch
+    fetch(form.action, {
+        method: form.method,
+        body: formData,
+        headers: {
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        // Reset button
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+        
+        // Modal Transition
+        closeModal('survey-modal');
+        openModal('survey-thankyou-modal');
+        
+        // Reset form & clear saved draft
+        form.reset();
+        clearSurveyDraft();
+        document.querySelectorAll('.survey-other-input').forEach(input => {
+            input.style.display = 'none';
+            input.required = false;
         });
-    }
-
-    goToStep('stepResult');
+    })
+    .catch(error => {
+        console.error('Error submitting survey:', error);
+        alert('Có lỗi xảy ra khi gửi khảo sát. Chị vui lòng kiểm tra kết nối mạng và thử lại nhé!');
+        submitBtn.innerHTML = originalBtnText;
+        submitBtn.disabled = false;
+    });
 }
 
 // SHARE WEBSITE FUNCTION

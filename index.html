@@ -32,14 +32,10 @@
         <nav class="nav-menu">
             <a href="#about">Về <span class="brand-highlight">Túc Hiên</span></a>
             <a href="#services">Dịch Vụ</a>
-            <a href="#quiz">Trắc Nghiệm</a>
+            <a href="javascript:void(0)" onclick="openModal('survey-modal')">Khảo Sát</a>
             <a href="#mission">Sứ Mệnh</a>
             <a href="#contact">Liên Hệ</a>
         </nav>
-        <div class="header-cta">
-            <a href="#quiz" class="btn btn-outline btn-header">Trắc nghiệm</a>
-            <a href="tel:1900234567" class="btn btn-solid btn-header">1900 23 45 67</a>
-        </div>
         <button class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle Navigation">
             <span></span>
             <span></span>
@@ -52,11 +48,11 @@
         <nav class="mobile-nav">
             <a href="#about" class="mobile-link">Về <span class="brand-highlight">Túc Hiên</span></a>
             <a href="#services" class="mobile-link">Dịch Vụ</a>
-            <a href="#quiz" class="mobile-link">Trắc Nghiệm</a>
+            <a href="javascript:void(0)" onclick="openModal('survey-modal')" class="mobile-link">Khảo Sát</a>
             <a href="#mission" class="mobile-link">Sứ Mệnh</a>
             <a href="#contact" class="mobile-link">Liên Hệ</a>
             <div class="mobile-menu-buttons">
-                <a href="#quiz" class="btn btn-outline mobile-link">Trắc nghiệm ngay</a>
+                <a href="javascript:void(0)" onclick="openModal('survey-modal')" class="btn btn-outline mobile-link">Khảo Sát ngay</a>
                 <a href="tel:1900234567" class="btn btn-solid mobile-link">Gọi 1900 23 45 67</a>
             </div>
         </nav>
@@ -72,8 +68,7 @@
                 </h1>
                 <p class="hero-subtitle">Giải pháp chăm sóc sức khỏe tự nhiên kết hợp giữa Yoga cổ điển, Y học cổ truyền và trải nghiệm thiên nhiên thực tế.</p>
                 <div class="hero-actions btn-group">
-                    <a href="#quiz" class="btn btn-solid hero-quiz-btn">Làm trắc nghiệm nhu cầu Thân - Tâm - Trí</a>
-                    <a href="javascript:void(0)" onclick="openModal('consult-modal')" class="btn btn-outline">Liên hệ tư vấn</a>
+                    <a href="javascript:void(0)" onclick="openModal('survey-modal')" class="btn btn-solid hero-quiz-btn">KHẢO SÁT NHU CẦU THÂN - TÂM - TRÍ</a>
                 </div>
             </div>
             <div class="hero-visual">
@@ -157,89 +152,6 @@
         </div>
     </section>
 
-    <!-- Interactive Assessment Section (Quiz - Multiple Choice & Back Button & Text breaks) -->
-    <section class="quiz-section" id="quiz">
-        <div class="container quiz-container">
-            <h2 class="section-title text-center">Làm trắc nghiệm nhu cầu Thân - Tâm - Trí</h2>
-            <p class="section-subtitle text-center">
-                Chỉ với 3 câu hỏi nhanh, <span class="brand-highlight">Túc Hiên</span> sẽ giúp bạn nhận diện vấn đề thể trạng và đề xuất giải pháp phù hợp nhất.
-            </p>
-            
-            <div class="quiz-card" id="quizCard">
-                <!-- Step 1 -->
-                <div class="quiz-step active" id="step1">
-                    <div class="quiz-step-header">
-                        <span class="step-indicator">CÂU HỎI 1 / 3</span>
-                    </div>
-                    <h3 class="question-text">Vấn đề lớn nhất bạn đang gặp phải lúc này là gì? (Có thể chọn nhiều đáp án)</h3>
-                    <div class="options-container multiple-choice">
-                        <button class="option-btn" data-value="physical">Đau mỏi cổ vai gáy, đầy bụng, thể chất rã rời</button>
-                        <button class="option-btn" data-value="mental">Áp lực công việc, lo âu dai dẳng, khó tập trung</button>
-                        <button class="option-btn" data-value="disconnection">Thiếu vận động, ngột ngạt vì thiết bị điện tử</button>
-                    </div>
-                    <div class="quiz-step-actions">
-                        <button onclick="advanceQuiz('step1', 'step2')" class="btn btn-solid btn-sm btn-quiz-next">Tiếp tục</button>
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="quiz-step" id="step2">
-                    <div class="quiz-step-header">
-                        <span class="step-indicator">CÂU HỎI 2 / 3</span>
-                    </div>
-                    <h3 class="question-text">Bạn có thể dành ra bao nhiêu thời gian để cải thiện? (Có thể chọn nhiều đáp án)</h3>
-                    <div class="options-container multiple-choice">
-                        <button class="option-btn" data-value="home">Tự chăm sóc tại nhà khoảng 15-30 phút mỗi ngày</button>
-                        <button class="option-btn" data-value="weekend">Có thể tham gia các workshop cuối tuần ngắn hạn</button>
-                        <button class="option-btn" data-value="trip">Có thể sắp xếp 2-3 ngày nghỉ để đi dã ngoại, ngắt kết nối</button>
-                    </div>
-                    <div class="quiz-step-actions">
-                        <button onclick="goBackToStep('step1')" class="quiz-back-btn">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="14" height="14">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                            </svg>
-                            Quay lại
-                        </button>
-                        <button onclick="advanceQuiz('step2', 'step3')" class="btn btn-solid btn-sm btn-quiz-next">Tiếp tục</button>
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="quiz-step" id="step3">
-                    <div class="quiz-step-header">
-                        <span class="step-indicator">CÂU HỎI 3 / 3</span>
-                    </div>
-                    <h3 class="question-text">Phương pháp tiếp cận nào khiến bạn cảm thấy thoải mái nhất? (Có thể chọn nhiều đáp án)</h3>
-                    <div class="options-container multiple-choice">
-                        <button class="option-btn" data-value="herbs">Thảo dược tự nhiên, xoa bóp bấm huyệt vật lý</button>
-                        <button class="option-btn" data-value="yoga">Tập luyện thở, tập Yoga, thiền định thư giãn</button>
-                        <button class="option-btn" data-value="nature">Đi bộ dã ngoại ngoài trời, hòa mình vào thiên nhiên</button>
-                    </div>
-                    <div class="quiz-step-actions">
-                        <button onclick="advanceQuiz('step3', 'stepResult')" class="btn btn-solid btn-sm btn-quiz-next">Hoàn thành & Xem kết quả</button>
-                    </div>
-                </div>
-
-                <!-- Result Step -->
-                <div class="quiz-step" id="stepResult">
-                    <div class="quiz-step-header">
-                        <span class="step-indicator">GỢI Ý TỪ TÚC HIÊN</span>
-                    </div>
-                    <h3 class="result-title" id="resultTitle">Đang phân tích dữ liệu...</h3>
-                    <p class="result-description" id="resultDesc">...</p>
-                    <div class="result-box" id="resultBox">
-                        <h4 id="recommendedServiceName">Gói gợi ý</h4>
-                        <span class="result-price" id="recommendedServicePrice">0đ</span>
-                    </div>
-                    <div class="quiz-result-actions btn-group">
-                        <button id="btnQuizPay" class="btn btn-solid">Đăng ký & Thanh toán nhanh</button>
-                        <button onclick="openModal('consult-modal')" class="btn btn-outline">Nhận tư vấn chi tiết hơn</button>
-                        <button onclick="resetQuiz()" class="btn btn-text">Làm lại trắc nghiệm</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Services Section -->
     <section class="services-section" id="services">
@@ -359,18 +271,6 @@
         </div>
     </section>
 
-
-
-    <!-- Quick Contact Footer Bar -->
-    <section class="cta-banner">
-        <div class="container banner-flex">
-            <h2 class="banner-heading">Bạn muốn hiểu rõ hơn về tình trạng <br class="desktop-only-br">sức khỏe hiện tại của mình?</h2>
-            <div class="banner-buttons btn-group">
-                <a href="#quiz" class="btn btn-solid">Làm trắc nghiệm nhu cầu</a>
-                <a href="tel:1900234567" class="btn btn-outline">Gọi ngay 1900 23 45 67</a>
-            </div>
-        </div>
-    </section>
 
     <!-- Footer (Redesigned Contact Section & Share Icons) -->
     <footer class="footer" id="contact">
@@ -633,6 +533,149 @@
                     <button id="detail-btn-pay" class="btn btn-solid">Đăng ký & Thanh toán</button>
                     <button id="detail-btn-consult" onclick="closeModal('detail-modal'); openModal('consult-modal')" class="btn btn-outline">Tư vấn thêm</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Khảo Sát Thân - Tâm - Trí Pop-up -->
+    <div class="modal" id="survey-modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeModal('survey-modal')">&times;</button>
+                <h3 class="modal-title">Khảo Sát Sức Khỏe Thân - Tâm - Trí</h3>
+                <p class="modal-subtitle">Chia sẻ tình trạng của chị để Túc Hiên đồng hành phục hồi tốt nhất nhé!</p>
+            </div>
+            <div class="modal-body">
+                <form id="landingSurveyForm" action="https://formspree.io/f/xkolkvar" method="POST" onsubmit="submitLandingSurvey(event)">
+                    <!-- Contact info grid -->
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label for="sv-modal-name">Họ và Tên *</label>
+                            <input type="text" id="sv-modal-name" name="Họ tên" required placeholder="Ví dụ: Diệu Thảo">
+                        </div>
+                        <div class="form-group">
+                            <label for="sv-modal-phone">Số điện thoại / Zalo *</label>
+                            <input type="tel" id="sv-modal-phone" name="Số điện thoại / Zalo" required placeholder="Ví dụ: 0912345678">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="sv-modal-email">Địa chỉ Email *</label>
+                        <input type="email" id="sv-modal-email" name="Email" required placeholder="Ví dụ: thaoduong@gmail.com">
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="form-group">
+                        <label class="section-label">1. Chị đang gặp phải vấn đề nào dưới đây? (Chọn nhiều)</label>
+                        <div class="survey-chips-container">
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Vấn đề sức khỏe" value="Đau mỏi cổ vai gáy, thắt lưng">
+                                <span>😣 Đau mỏi cổ vai gáy, lưng</span>
+                            </label>
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Vấn đề sức khỏe" value="Mệt mỏi, thiếu năng lượng">
+                                <span>🪫 Mệt mỏi, thiếu năng lượng</span>
+                            </label>
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Vấn đề sức khỏe" value="Căng thẳng, lo âu, mất ngủ">
+                                <span>🌀 Căng thẳng, lo âu, mất ngủ</span>
+                            </label>
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Vấn đề sức khỏe" value="Tiêu hóa kém, đề kháng yếu">
+                                <span>🍃 Tiêu hóa kém, đề kháng yếu</span>
+                            </label>
+                            <label class="survey-chip other-chip">
+                                <input type="checkbox" name="Vấn đề sức khỏe" value="Khác" onchange="toggleOtherText(this, 'sv-q3-other')">
+                                <span>✍️ Khác</span>
+                            </label>
+                        </div>
+                        <input type="text" id="sv-q3-other" name="Vấn đề sức khỏe (Khác)" class="survey-other-input" placeholder="Nhập vấn đề cụ thể của chị..." style="display:none; margin-top: 8px;">
+                    </div>
+
+                    <!-- Question 4 -->
+                    <div class="form-group">
+                        <label class="section-label">2. Điều chị mong muốn cải thiện nhất là gì? (Chọn nhiều)</label>
+                        <div class="survey-chips-container">
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Mong muốn cải thiện" value="Hết đau mỏi cơ khớp, vận động tốt">
+                                <span>💪 Hết đau mỏi, cơ thể dẻo dai</span>
+                            </label>
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Mong muốn cải thiện" value="Tràn đầy năng lượng, giảm mệt mỏi">
+                                <span>⚡ Tràn đầy năng lượng</span>
+                            </label>
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Mong muốn cải thiện" value="Tâm trí bình yên, sâu giấc">
+                                <span>🧘 Tâm trí bình yên, sâu giấc</span>
+                            </label>
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Mong muốn cải thiện" value="Cân bằng Thân - Tâm - Trí">
+                                <span>🌿 Cân bằng Thân - Tâm - Trí</span>
+                            </label>
+                            <label class="survey-chip other-chip">
+                                <input type="checkbox" name="Mong muốn cải thiện" value="Khác" onchange="toggleOtherText(this, 'sv-q4-other')">
+                                <span>✍️ Khác</span>
+                            </label>
+                        </div>
+                        <input type="text" id="sv-q4-other" name="Mong muốn cải thiện (Khác)" class="survey-other-input" placeholder="Nhập mong muốn cụ thể của chị..." style="display:none; margin-top: 8px;">
+                    </div>
+
+                    <!-- Question 5 -->
+                    <div class="form-group">
+                        <label class="section-label">3. Chị có thể dành ra bao nhiêu thời gian để chăm sóc bản thân? (Chọn nhiều)</label>
+                        <div class="survey-chips-container">
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Thời gian sẵn có" value="15-30 phút/ngày tại nhà">
+                                <span>⏱️ 15-30 phút/ngày tự tập tại nhà</span>
+                            </label>
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Thời gian sẵn có" value="Workshop cuối tuần">
+                                <span>🗓️ Workshop ngắn cuối tuần</span>
+                            </label>
+                            <label class="survey-chip">
+                                <input type="checkbox" name="Thời gian sẵn có" value="2-3 ngày nghỉ dã ngoại trị liệu">
+                                <span>🏕️ 2-3 ngày dã ngoại phục hồi</span>
+                            </label>
+                            <label class="survey-chip other-chip">
+                                <input type="checkbox" name="Thời gian sẵn có" value="Khác" onchange="toggleOtherText(this, 'sv-q5-other')">
+                                <span>✍️ Khác</span>
+                            </label>
+                        </div>
+                        <input type="text" id="sv-q5-other" name="Thời gian sẵn có (Khác)" class="survey-other-input" placeholder="Nhập thời gian chị có thể sắp xếp..." style="display:none; margin-top: 8px;">
+                    </div>
+
+                    <!-- GDPR Consent -->
+                    <div class="form-group" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.85rem; color: var(--color-text-muted); text-transform: none; cursor: pointer; line-height: 1.4;">
+                            <input type="checkbox" name="Đồng ý xử lý dữ liệu" required style="width: auto; height: auto; margin-top: 3px; flex-shrink:0;">
+                            <span>Tôi đồng ý cung cấp thông tin cá nhân của mình để chủ website Túc Hiên liên hệ tư vấn sức khỏe và thiết lập lộ trình phục hồi phù hợp. *</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-solid w-full" id="survey-submit-btn">🌿 GỬI KHẢO SÁT &amp; NHẬN TƯ VẤN</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: Xác Nhận & Cảm Ơn Khảo Sát -->
+    <div class="modal" id="survey-thankyou-modal">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+                <button class="modal-close" onclick="closeModal('survey-thankyou-modal')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding-top: 0;">
+                <div style="font-size: 3rem; margin-bottom: 1.25rem; display: inline-block; animation: heartBeat 1.5s infinite;">🌿</div>
+                <h3 class="modal-title" style="font-size: 1.8rem; color: var(--color-primary); margin-bottom: 1rem; font-family: var(--font-heading);">Gửi Khảo Sát Thành Công!</h3>
+                <p style="color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.65; margin-bottom: 1.5rem;">
+                    Cảm ơn chị đã dành thời gian chia sẻ với Túc Hiên. Dưới đây là thông tin chị đã đăng ký:
+                </p>
+                <div id="survey-submitted-summary" style="background-color: var(--bg-card-light); padding: 1.25rem; border-radius: var(--border-radius-normal); text-align: left; font-size: 0.9rem; margin-bottom: 1.5rem; border: 1px solid rgba(44, 38, 35, 0.05); line-height: 1.6;">
+                    <!-- Dynamic Summary populated by JS -->
+                </div>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-bottom: 2rem;">
+                    Chuyên gia của Túc Hiên sẽ sớm xem xét thông tin và liên hệ trực tiếp qua Zalo/điện thoại để hỗ trợ tư vấn sâu nhất cho chị.
+                </p>
+                <button class="btn btn-solid w-full" onclick="closeModal('survey-thankyou-modal')">ĐỒNG Ý &amp; ĐÓNG</button>
             </div>
         </div>
     </div>

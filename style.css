@@ -693,9 +693,9 @@ strong {
     gap: 0.75rem;
 }
 
-/* Premium Service Card Style (Tropical Green Background) */
+/* Premium Service Card Style (Terracotta Brown Background) */
 .service-card-premium {
-    background-color: var(--color-secondary) !important;
+    background-color: var(--color-primary) !important;
     border-color: rgba(253, 251, 247, 0.15) !important;
 }
 
@@ -717,7 +717,7 @@ strong {
 
 .service-card-premium .btn-solid-premium {
     background-color: var(--color-accent) !important;
-    color: var(--color-secondary) !important;
+    color: var(--color-primary) !important;
     border-color: var(--color-accent) !important;
 }
 
@@ -736,14 +736,14 @@ strong {
 
 .service-card-premium .btn-group .btn-solid-premium:hover {
     background-color: var(--color-accent) !important;
-    color: var(--color-secondary) !important;
+    color: var(--color-primary) !important;
     border-color: var(--color-accent) !important;
     transform: translateY(-2px);
 }
 
 .service-card-premium .btn-group .btn-outline-premium:hover {
     background-color: var(--color-accent) !important;
-    color: var(--color-secondary) !important;
+    color: var(--color-primary) !important;
     border-color: var(--color-accent) !important;
     transform: translateY(-2px);
 }
@@ -766,7 +766,7 @@ strong {
 
 .service-card-premium .badge-best-seller-inline {
     background-color: var(--color-accent) !important;
-    color: var(--color-secondary) !important;
+    color: var(--color-primary) !important;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
@@ -776,7 +776,7 @@ strong {
 }
 
 .premium-package-box {
-    background-color: var(--color-secondary); /* Olive/Sage Green #385A47 */
+    background-color: var(--color-primary); /* Terracotta Brown #9E6F55 */
     color: var(--color-cream-light);
     border-radius: 20px;
     padding: 5rem;
@@ -876,7 +876,7 @@ strong {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-secondary);
+    color: var(--color-primary);
     background-color: var(--color-accent);
     border-radius: 50%;
     font-size: 0.75rem;
@@ -920,7 +920,7 @@ strong {
 
 .premium-actions .btn-solid-premium {
     background-color: var(--color-accent);
-    color: var(--color-secondary);
+    color: var(--color-primary);
     border-color: var(--color-accent);
 }
 
@@ -941,14 +941,14 @@ strong {
 /* Directly hovering the payment button restores its full color */
 .btn-group-premium .btn-solid-premium:hover {
     background-color: var(--color-accent) !important;
-    color: var(--color-secondary) !important;
+    color: var(--color-primary) !important;
     border-color: var(--color-accent) !important;
     transform: translateY(-2px);
 }
 
 .btn-group-premium .btn-outline-premium:hover {
     background-color: var(--color-accent);
-    color: var(--color-secondary);
+    color: var(--color-primary);
     border-color: var(--color-accent);
     transform: translateY(-2px);
 }
@@ -2224,3 +2224,88 @@ strong {
         justify-content: center;
     }
 }
+
+/* CUSTOM SURVEY CHIPS STYLE INSIDE MODAL */
+.survey-chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.survey-chip {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.survey-chip input {
+    display: none; /* Hide native checkbox */
+}
+
+.survey-chip span {
+    display: inline-block;
+    padding: 0.55rem 1.15rem;
+    border-radius: var(--border-radius-pill);
+    background-color: var(--bg-card-light);
+    border: 1px solid rgba(44, 38, 35, 0.08);
+    font-size: 0.85rem;
+    color: var(--color-text-dark);
+    transition: var(--transition-smooth);
+    user-select: none;
+    font-weight: 500;
+}
+
+.survey-chip:hover span {
+    border-color: var(--color-primary);
+    background-color: rgba(158, 111, 85, 0.05);
+}
+
+.survey-chip input:checked + span {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
+}
+
+.survey-other-input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid rgba(44, 38, 35, 0.12);
+    border-radius: var(--border-radius-normal);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    color: var(--color-text-dark);
+    background-color: var(--color-cream-light);
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+.survey-other-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(158, 111, 85, 0.1);
+    background-color: var(--color-white);
+}
+
+.form-group-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+@media (max-width: 576px) {
+    .form-group-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+}
+
+.section-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-top: 1.25rem;
+    margin-bottom: 0.4rem;
+    display: block;
+    letter-spacing: 0.03em;
+}
+

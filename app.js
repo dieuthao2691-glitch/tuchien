@@ -161,6 +161,298 @@ window.addEventListener('click', (e) => {
     });
 });
 
+// CHATBOT WIDGET
+const chatToggle = document.getElementById('chatToggle');
+const chatPanel = document.getElementById('chatPanel');
+const chatClose = document.getElementById('chatClose');
+const chatBody = document.getElementById('chatBody');
+const chatWaitlistBtn = document.getElementById('chatWaitlistBtn');
+const chatActionButtons = document.querySelectorAll('.chat-action-btn');
+const chatInputForm = document.getElementById('chatInputForm');
+const chatInput = document.getElementById('chatInput');
+
+let chatHasGreeted = false;
+
+const chatResponses = {
+    default: 'Nếu chị/anh muốn, mình có thể gợi ý một bước đi phù hợp nhất: bắt đầu bằng tư vấn đầu tiên, một workshop ngắn, hoặc một lộ trình phục hồi phù hợp với nhu cầu hiện tại.',
+    'Túc Hiên phù hợp với ai?': 'Túc Hiên phù hợp với những người bận rộn, làm việc nhiều trên máy tính, dễ căng thẳng, đau nhức cơ thể hoặc muốn chăm sóc bản thân một cách thực tế, không quá cầu kỳ.',
+    'Giá dịch vụ thế nào?': 'Túc Hiên có mức giá rõ ràng cho từng dịch vụ, từ buổi tư vấn ngắn đến các gói chăm sóc sâu hơn. Mình có thể giúp chị/anh chọn mức phù hợp nhất với nhu cầu và ngân sách hiện tại.',
+    'Mình có thể bắt đầu từ đâu?': 'Có thể bắt đầu bằng một buổi tư vấn hoặc khảo sát nhu cầu thân – tâm – trí. Chỉ cần một bước đầu tiên là đủ.'
+};
+
+const chatServicePackages = [
+    { key: 'herbs', title: 'Thảo Dược & Y Học Cổ Truyền', price: 500000, priceLabel: 'Từ 500.000đ / liệu trình' },
+    { key: 'workshop', title: 'Workshop Chuyên Đề Thực Tế', price: 350000, priceLabel: 'Từ 350.000đ / buổi' },
+    { key: 'nature', title: 'Vận Động & Trải Nghiệm Thiên Nhiên', price: 1000000, priceLabel: 'Từ 1.000.000đ / chuyến' }
+];
+
+function addChatBubble(text, type = 'bot') {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${type}`;
+    bubble.textContent = text;
+    chatBody.appendChild(bubble);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function addChatHtmlBubble(html, type = 'bot') {
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${type}`;
+    bubble.innerHTML = html;
+    chatBody.appendChild(bubble);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    return bubble;
+}
+
+function showAudienceSurveyPrompt() {
+    addChatBubble('Nếu chị/anh muốn, mình có thể làm một khảo sát chuyên sâu để hiểu rõ nhu cầu hơn trước khi đề xuất gói phù hợp. Chị/anh có muốn làm ngay không?', 'bot');
+
+    const html = `
+        <div class="chat-inline-actions">
+            <button type="button" class="btn btn-solid btn-sm" data-chat-action="survey-yes">Có, làm khảo sát</button>
+            <button type="button" class="btn btn-outline btn-sm" data-chat-action="survey-no">Không, cho mình xem gói</button>
+        </div>
+    `;
+    const bubble = addChatHtmlBubble(html, 'bot');
+
+    const yesBtn = bubble.querySelector('[data-chat-action="survey-yes"]');
+    const noBtn = bubble.querySelector('[data-chat-action="survey-no"]');
+
+    if (yesBtn) {
+        yesBtn.addEventListener('click', () => {
+            addChatBubble('Được chị/anh nhé. Mình sẽ mở form khảo sát cho chị/anh ngay.', 'bot');
+            openModal('survey-modal');
+        });
+    }
+
+    if (noBtn) {
+        noBtn.addEventListener('click', () => {
+            addChatBubble('Được chị/anh nhé. Dưới đây là các gói phù hợp để chị/anh tham khảo trước.', 'bot');
+            showPackageCards();
+            showContactFollowup();
+        });
+    }
+}
+
+function showPackageCards() {
+    const html = `
+        <div style="display:grid; gap:10px; margin-top:8px;">
+            ${chatServicePackages.map(pkg => `
+                <div class="chat-package-card">
+                    <h4>${pkg.title}</h4>
+                    <p>${pkg.priceLabel}</p>
+                    <div class="chat-package-actions">
+                        <button type="button" class="btn btn-solid btn-sm" data-package-pay="${pkg.key}">Đăng ký</button>
+                        <button type="button" class="btn btn-outline btn-sm" data-package-detail="${pkg.key}">Xem chi tiết</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    const bubble = addChatHtmlBubble(html, 'bot');
+
+    bubble.querySelectorAll('[data-package-pay]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pkg = chatServicePackages.find(item => item.key === btn.getAttribute('data-package-pay'));
+            if (pkg) openPaymentModal(pkg.title, pkg.price);
+        });
+    });
+
+    bubble.querySelectorAll('[data-package-detail]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const pkg = chatServicePackages.find(item => item.key === btn.getAttribute('data-package-detail'));
+            if (pkg) openDetailModal(pkg.key);
+        });
+    });
+}
+
+function showContactFollowup() {
+    const html = `
+        <div class="chat-inline-actions">
+            <button type="button" class="btn btn-solid btn-sm" data-chat-contact="consult">Để lại thông tin liên hệ</button>
+            <button type="button" class="btn btn-outline btn-sm" data-chat-contact="services">Xem thêm dịch vụ</button>
+        </div>
+    `;
+
+    const bubble = addChatHtmlBubble(html, 'bot');
+
+    const consultBtn = bubble.querySelector('[data-chat-contact="consult"]');
+    const servicesBtn = bubble.querySelector('[data-chat-contact="services"]');
+
+    if (consultBtn) {
+        consultBtn.addEventListener('click', () => {
+            openModal('consult-modal');
+        });
+    }
+
+    if (servicesBtn) {
+        servicesBtn.addEventListener('click', () => {
+            document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+}
+
+function showStartSurveyPrompt() {
+    addChatBubble('Có thể bắt đầu bằng một buổi tư vấn hoặc khảo sát nhu cầu thân – tâm – trí. Chị/anh có muốn làm khảo sát ngay để mình đề xuất gói phù hợp nhất không?', 'bot');
+
+    const html = `
+        <div class="chat-inline-actions">
+            <button type="button" class="btn btn-solid btn-sm" data-chat-action="start-survey">Làm khảo sát ngay</button>
+            <button type="button" class="btn btn-outline btn-sm" data-chat-action="start-packages">Xem gói dịch vụ</button>
+        </div>
+    `;
+    const bubble = addChatHtmlBubble(html, 'bot');
+
+    const surveyBtn = bubble.querySelector('[data-chat-action="start-survey"]');
+    const packagesBtn = bubble.querySelector('[data-chat-action="start-packages"]');
+
+    if (surveyBtn) {
+        surveyBtn.addEventListener('click', () => {
+            openModal('survey-modal');
+        });
+    }
+
+    if (packagesBtn) {
+        packagesBtn.addEventListener('click', () => {
+            showPackageCards();
+            showContactFollowup();
+        });
+    }
+}
+
+function showPostSurveyPackages() {
+    addChatBubble('Cảm ơn chị/anh đã hoàn tất khảo sát. Dựa trên nhu cầu hiện tại, mình đề xuất 3 gói phù hợp sau:', 'bot');
+    showPackageCards();
+    showContactFollowup();
+}
+
+function handleChatReply(answer) {
+    if (!chatBody) return;
+    addChatBubble(answer, 'user');
+
+    if (answer === 'Túc Hiên phù hợp với ai?') {
+        setTimeout(() => showAudienceSurveyPrompt(), 350);
+        return;
+    }
+
+    if (answer === 'Giá dịch vụ thế nào?') {
+        setTimeout(() => {
+            addChatBubble(chatResponses[answer] || chatResponses.default, 'bot');
+            showPackageCards();
+        }, 350);
+        return;
+    }
+
+    if (answer === 'Mình có thể bắt đầu từ đâu?') {
+        setTimeout(() => showStartSurveyPrompt(), 350);
+        return;
+    }
+
+    const reply = chatResponses[answer] || chatResponses.default;
+    setTimeout(() => addChatBubble(reply, 'bot'), 350);
+}
+
+function getChatReply(message) {
+    const text = message.toLowerCase();
+    if (text.includes('dành cho ai') || text.includes('phù hợp với ai') || text.includes('ai thì')) {
+        return { text: chatResponses['Túc Hiên phù hợp với ai?'], followup: 'audience' };
+    }
+    if (text.includes('mua') || text.includes('đăng ký') || text.includes('đặt')) {
+        return { text: 'Nếu chị/anh muốn bắt đầu, mình có thể dẫn chị/anh tới form để để lại thông tin và được Túc Hiên liên hệ lại. Chị/anh có muốn điền ngay không?', followup: 'contact' };
+    }
+    if (text.includes('giá') || text.includes('tốn') || text.includes('phí')) {
+        return { text: chatResponses['Giá dịch vụ thế nào?'], followup: 'packages' };
+    }
+    if (text.includes('thời gian') || text.includes('bận') || text.includes('lịch trình')) {
+        return { text: 'Có. Túc Hiên có cách tiếp cận linh hoạt, phù hợp với người bận rộn. Có thể bắt đầu bằng một buổi tư vấn ngắn hoặc một workshop thực tế.', followup: 'none' };
+    }
+    if (text.includes('bắt đầu') || text.includes('từ đâu') || text.includes('cần gì') || text.includes('chưa chắc')) {
+        return { text: chatResponses['Mình có thể bắt đầu từ đâu?'], followup: 'start' };
+    }
+    if (text.includes('không') && (text.includes('chữa lành') || text.includes('cầu kỳ'))) {
+        return { text: 'Không hẳn. Túc Hiên mang phong cách gần gũi và thực tế. Nhiều người đến chỉ để dừng lại một chút, lắng nghe cơ thể và sống chậm hơn.', followup: 'none' };
+    }
+    if (text.includes('form') || text.includes('điền') || text.includes('liên hệ')) {
+        return { text: 'Được chị/anh nhé. Mình có thể dẫn chị/anh tới form khảo sát để để lại thông tin trước.', followup: 'contact' };
+    }
+    return { text: chatResponses.default, followup: 'none' };
+}
+
+function openChat() {
+    if (!chatPanel) return;
+    chatPanel.classList.add('active');
+    if (!chatHasGreeted) {
+        chatHasGreeted = true;
+        addChatBubble('Chào chị/anh, cảm ơn chị/anh đã ghé qua Túc Hiên. Nếu chị/anh đang cần một chút bình yên thực tế trong nhịp sống bận rộn, mình có thể giúp chị/anh bắt đầu từ một bước nhỏ, phù hợp nhất với nhu cầu hiện tại.', 'bot');
+    }
+    if (chatBody) {
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+}
+
+if (chatToggle && chatPanel) {
+    chatToggle.addEventListener('click', () => {
+        if (chatPanel.classList.contains('active')) {
+            chatPanel.classList.remove('active');
+        } else {
+            openChat();
+        }
+    });
+}
+
+if (chatClose) {
+    chatClose.addEventListener('click', () => {
+        chatPanel.classList.remove('active');
+    });
+}
+
+chatActionButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        const answer = button.getAttribute('data-answer');
+        handleChatReply(answer);
+    });
+});
+
+if (chatWaitlistBtn) {
+    chatWaitlistBtn.addEventListener('click', () => {
+        addChatBubble('Nếu chị/anh chưa sẵn sàng đăng ký ngay, chị/anh cứ để lại thông tin để được tư vấn thêm trước nhé.', 'user');
+        setTimeout(() => {
+            addChatBubble('Được chị/anh nhé. Mình sẽ dẫn chị/anh tới form khảo sát để để lại thông tin và được Túc Hiên liên hệ lại.', 'bot');
+            setTimeout(() => {
+                openModal('survey-modal');
+            }, 400);
+        }, 350);
+    });
+}
+
+if (chatInputForm && chatInput) {
+    chatInputForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const message = chatInput.value.trim();
+        if (!message) return;
+        addChatBubble(message, 'user');
+        chatInput.value = '';
+        setTimeout(() => {
+            const reply = getChatReply(message);
+            addChatBubble(reply.text, 'bot');
+            if (reply.followup === 'audience') {
+                setTimeout(() => showAudienceSurveyPrompt(), 350);
+            } else if (reply.followup === 'packages') {
+                setTimeout(() => {
+                    showPackageCards();
+                }, 350);
+            } else if (reply.followup === 'start') {
+                setTimeout(() => showStartSurveyPrompt(), 350);
+            } else if (reply.followup === 'contact') {
+                setTimeout(() => {
+                    addChatBubble('Mình có thể giúp chị/anh để lại thông tin để được Túc Hiên liên hệ lại sau.', 'bot');
+                    showContactFollowup();
+                }, 350);
+            }
+        }, 350);
+    });
+}
+
 // DYNAMIC PAYMENT MODAL
 let currentCaptchaCode = '';
 

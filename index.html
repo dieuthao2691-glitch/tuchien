@@ -680,6 +680,39 @@
         </div>
     </div>
 
+    <!-- CHAT WIDGET -->
+    <div class="chat-widget" id="chatWidget">
+        <button class="chat-toggle" id="chatToggle" aria-label="Mở chatbot">
+            <span>💬</span>
+        </button>
+        <div class="chat-panel" id="chatPanel">
+            <div class="chat-header">
+                <div>
+                    <h3>Túc Hiên</h3>
+                    <p>Đồng hành nhẹ nhàng cùng bạn</p>
+                </div>
+                <button class="chat-close" id="chatClose" aria-label="Đóng chatbot">×</button>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div class="chat-bubble bot">
+                    Chào chị/anh, cảm ơn chị/anh đã ghé qua Túc Hiên. Nếu chị/anh đang cần một chút bình yên thực tế trong nhịp sống bận rộn, mình có thể giúp chị/anh bắt đầu từ một bước nhỏ, phù hợp nhất với nhu cầu hiện tại.
+                </div>
+            </div>
+            <div class="chat-footer">
+                <div class="chat-actions">
+                    <button class="chat-action-btn" data-answer="Túc Hiên phù hợp với ai?">Túc Hiên phù hợp với ai?</button>
+                    <button class="chat-action-btn" data-answer="Giá dịch vụ thế nào?">Giá dịch vụ thế nào?</button>
+                    <button class="chat-action-btn" data-answer="Mình có thể bắt đầu từ đâu?">Mình có thể bắt đầu từ đâu?</button>
+                </div>
+                <form class="chat-input-form" id="chatInputForm">
+                    <input type="text" id="chatInput" placeholder="Nhắn với Túc Hiên..." autocomplete="off">
+                    <button type="submit">Gửi</button>
+                </form>
+                <button class="chat-cta" id="chatWaitlistBtn">Để lại thông tin để được tư vấn nhẹ nhàng</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JS Link -->
     <script src="app.js"></script>
 </body>

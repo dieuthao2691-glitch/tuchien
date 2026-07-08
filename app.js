@@ -569,8 +569,24 @@ function openPaymentModal(serviceName, price) {
             });
         }
         
-        generateCaptcha();
-        openModal('payment-modal');
+        // Prefer opening a dedicated payment page so there is a URL to share/bookmark
+        // Create a checkout session on the server, then navigate to the returned payment URL
+        fetch('/api/create_checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: '', phone: '', email: '', service_name: serviceName, price: price })
+        }).then(r => r.json()).then(data => {
+            if (data && data.payment_url) {
+                window.location.href = data.payment_url;
+            } else {
+                // fallback to modal if server fails
+                generateCaptcha();
+                openModal('payment-modal');
+            }
+        }).catch(err => {
+            generateCaptcha();
+            openModal('payment-modal');
+        });
     }
 }
 
@@ -593,6 +609,18 @@ function handlePaymentSubmit(event) {
     const email = document.getElementById('pay-email').value;
     const service = document.getElementById('pay-service-name').textContent;
     
+    // Basic input validation
+    const phoneDigits = phone.replace(/[^0-9]/g, '');
+    if (phoneDigits.length < 9 || phoneDigits.length > 12) {
+        alert('Vui lòng nhập số điện thoại hợp lệ (9-12 chữ số).');
+        return;
+    }
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailPattern.test(email)) {
+        alert('Vui lòng nhập địa chỉ email hợp lệ.');
+        return;
+    }
+
     // Captcha validation
     const typedCaptcha = document.getElementById('pay-captcha').value.trim().toUpperCase();
     if (typedCaptcha !== currentCaptchaCode) {
@@ -602,9 +630,24 @@ function handlePaymentSubmit(event) {
         return;
     }
     
-    alert(`Cảm ơn chị ${name}!\nTúc Hiên đã tiếp nhận thông tin xác nhận chuyển khoản cho dịch vụ: "${service}".\nChúng tôi sẽ đối soát giao dịch và liên hệ lại với chị qua số điện thoại ${phone} hoặc email ${email} để gửi vé xác nhận ngay lập tức.`);
-    document.getElementById('paymentForm').reset();
-    closeModal('payment-modal');
+    // Create checkout session on server to generate order and redirect to payment page
+    fetch('/api/create_checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone: phoneDigits, email, service_name: service, price: Number(document.getElementById('pay-service-price').textContent.replace(/[^0-9]/g,'')) })
+    }).then(r => r.json()).then(data => {
+        if (data && data.payment_url) {
+            window.location.href = data.payment_url;
+            return;
+        }
+        alert(`Cảm ơn ${name}! Yêu cầu đã ghi nhận, chúng tôi sẽ liên hệ lại.`);
+        document.getElementById('paymentForm').reset();
+        closeModal('payment-modal');
+    }).catch(err => {
+        alert(`Cảm ơn ${name}! Yêu cầu đã ghi nhận, chúng tôi sẽ liên hệ lại.`);
+        document.getElementById('paymentForm').reset();
+        closeModal('payment-modal');
+    });
 }
 
 function handleTourSubmit(event) {

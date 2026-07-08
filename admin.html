@@ -115,10 +115,22 @@
   <script>
     const state = { activeTab: 'products', products: [], customers: [], orders: [], editing: null, editingType: null };
 
+    // If server injected initial state, use it to render immediately
+    try {
+      if (window.__INITIAL_STATE__) {
+        state.products = window.__INITIAL_STATE__.products || [];
+        state.customers = window.__INITIAL_STATE__.customers || [];
+        state.orders = window.__INITIAL_STATE__.orders || [];
+        // Render synchronously so user sees data right away
+        render();
+      }
+    } catch (e) { /* ignore */ }
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
+    let lastOrdersJson = '';
     async function loadData() {
       const [productsRes, customersRes, ordersRes] = await Promise.all([
         fetch('/api/products'),
@@ -128,6 +140,8 @@
       state.products = await productsRes.json();
       state.customers = await customersRes.json();
       state.orders = await ordersRes.json();
+      // track last orders snapshot for polling updates
+      try { lastOrdersJson = JSON.stringify(state.orders); } catch(e) { lastOrdersJson = ''; }
       render();
     }
 
@@ -341,6 +355,23 @@
     }
 
     loadData();
+
+    // Poll /api/orders every 5s and update orders table when changed
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/orders');
+        if (!res.ok) return;
+        const orders = await res.json();
+        const json = JSON.stringify(orders);
+        if (json !== lastOrdersJson) {
+          state.orders = orders;
+          lastOrdersJson = json;
+          renderOrders();
+        }
+      } catch (e) {
+        // ignore polling errors
+      }
+    }, 5000);
   </script>
 </body>
 </html>

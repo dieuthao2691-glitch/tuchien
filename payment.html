@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Thanh toán - Túc Hiên</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;padding:24px;background:#f6f1eb;color:#2f241f}
+    .card{max-width:720px;margin:32px auto;background:#fff;padding:20px;border-radius:12px;border:1px solid #e4d9ce}
+    .qr{display:flex;gap:16px;align-items:center}
+    img.qr-img{width:220px;height:220px;object-fit:contain;border-radius:8px;border:1px solid #eee}
+    .info{flex:1}
+    .btn{padding:10px 12px;border-radius:8px;background:#9e6f55;color:#fff;border:none;cursor:pointer}
+    .muted{color:#75695f}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2 id="title">Thanh toán</h2>
+    <div id="summary" class="muted">Chuẩn bị giao dịch...</div>
+    <div style="height:16px"></div>
+    <div class="qr">
+      <img id="qrImage" class="qr-img" src="qr-vietqr-sepay.png" alt="QR thanh toán" />
+      <div class="info">
+        <div><strong>Số tiền:</strong> <span id="amount"></span></div>
+        <div><strong>Ghi chú chuyển khoản:</strong> <span id="note"></span></div>
+        <div style="height:10px"></div>
+        <div id="actions"><button id="btnPaid" class="btn">Tôi đã chuyển tiền</button></div>
+      </div>
+    </div>
+    <div id="thankyou" class="hidden">
+      <h3>Cảm ơn bạn!</h3>
+      <p>Thanh toán đã hoàn tất. Chúng tôi sẽ liên hệ lại sớm.</p>
+    </div>
+  </div>
+
+  <script>
+    function qs(key){
+      return new URLSearchParams(window.location.search).get(key);
+    }
+    const orderId = qs('order_id');
+    const amountEl = document.getElementById('amount');
+    const noteEl = document.getElementById('note');
+    const summary = document.getElementById('summary');
+    const btnPaid = document.getElementById('btnPaid');
+    const thank = document.getElementById('thankyou');
+
+    async function loadOrder(){
+      if (!orderId) return;
+      const res = await fetch('/api/orders');
+      const orders = await res.json();
+      const o = orders.find(x=>String(x.id)===String(orderId));
+      if (!o) {
+        summary.textContent = 'Đơn không tìm thấy.';
+        return;
+      }
+      amountEl.textContent = Number(o.amount || 0).toLocaleString('vi-VN') + '₫';
+      noteEl.textContent = `Đơn#${o.id}`;
+      summary.textContent = `Trạng thái: ${o.status}`;
+      if (o.status === 'success' || o.status === 'paid'){
+        showThankyou();
+      }
+    }
+
+    function showThankyou(){
+      thank.classList.remove('hidden');
+      document.getElementById('actions').classList.add('hidden');
+      summary.textContent = 'Thanh toán thành công';
+      // small popup
+      alert('Cảm ơn bạn! Thanh toán đã ghi nhận.');
+    }
+
+    // Manual 'I've paid' button triggers a check (useful for manual transfers)
+    btnPaid.addEventListener('click', async ()=>{
+      btnPaid.disabled = true;
+      btnPaid.textContent = 'Đang kiểm tra...';
+      await loadOrder();
+      btnPaid.disabled = false;
+      btnPaid.textContent = 'Tôi đã chuyển tiền';
+    });
+
+    // poll status
+    setInterval(loadOrder,3000);
+    loadOrder();
+  </script>
+</body>
+</html>

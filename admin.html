@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel - Túc Hiên</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f1eb;
+      --panel: #fffdf9;
+      --border: #e4d9ce;
+      --text: #2f241f;
+      --muted: #75695f;
+      --primary: #9e6f55;
+      --primary-dark: #7d563f;
+      --accent: #385a47;
+      --danger: #b94a48;
+      --shadow: 0 10px 25px rgba(0,0,0,.08);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:24px; }
+    h1 { margin:0; font-size: 28px; }
+    .pill { display:inline-block; padding:6px 10px; background:#fff; border:1px solid var(--border); border-radius:999px; color:var(--muted); font-size:13px; }
+    .live-banner { margin: 0 0 16px; padding: 10px 12px; background: #fdf2e8; border: 1px solid #e8c9b0; color: #7a4a2d; border-radius: 10px; font-weight: 600; }
+    .tabs { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+    .tab-btn { padding:10px 14px; border:1px solid var(--border); background:#fff; border-radius:10px; cursor:pointer; font-weight:600; color:var(--muted); }
+    .tab-btn.active { background: var(--primary); color:#fff; border-color: var(--primary); }
+    .panel { background: var(--panel); border:1px solid var(--border); border-radius:16px; box-shadow: var(--shadow); padding:18px; }
+    .toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .btn { border:none; padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:600; }
+    .btn-primary { background: var(--primary); color:#fff; }
+    .btn-secondary { background:#fff; border:1px solid var(--border); color:var(--text); }
+    .btn-danger { background: var(--danger); color:#fff; }
+    table { width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px; }
+    th, td { text-align:left; padding:12px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+    th { background:#f4ece4; font-size:13px; text-transform:uppercase; color:var(--muted); }
+    tr:hover { background:#fcfaf7; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .modal { position:fixed; inset:0; background: rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:18px; z-index:1000; }
+    .modal.active { display:flex; }
+    .modal-card { background:white; width:min(580px, 100%); border-radius:16px; padding:20px; box-shadow: var(--shadow); }
+    .modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .close-btn { border:none; background:transparent; font-size:24px; cursor:pointer; }
+    .form-grid { display:grid; gap:12px; }
+    .form-row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    .field label { display:block; margin-bottom:6px; font-weight:600; color:var(--muted); }
+    .field input, .field select, .field textarea { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:10px; font:inherit; }
+    .field textarea { min-height:90px; resize:vertical; }
+    .modal-foot { display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
+    .empty { color:var(--muted); padding:16px 0; }
+    @media (max-width: 760px) { .form-row { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="live-banner">Phiên bản admin mới: dữ liệu đang được lấy trực tiếp từ brain.db</div>
+    <div class="topbar">
+      <div>
+        <h1>Admin Panel</h1>
+        <div class="pill">Quản lý sản phẩm, khách hàng và đơn hàng</div>
+      </div>
+      <a class="btn btn-secondary" href="/">← Về trang chủ</a>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab-btn active" data-tab="products">Sản phẩm</button>
+      <button class="tab-btn" data-tab="customers">Khách hàng</button>
+      <button class="tab-btn" data-tab="orders">Đơn hàng</button>
+    </div>
+
+    <div class="panel" id="productsPanel">
+      <div class="toolbar">
+        <strong>Sản phẩm</strong>
+        <button class="btn btn-primary" onclick="openModal('products')">+ Thêm mới</button>
+      </div>
+      <div id="productsTable"></div>
+    </div>
+
+    <div class="panel" id="customersPanel" style="display:none;">
+      <div class="toolbar">
+        <strong>Khách hàng</strong>
+        <button class="btn btn-primary" onclick="openModal('customers')">+ Thêm mới</button>
+      </div>
+      <div id="customersTable"></div>
+    </div>
+
+    <div class="panel" id="ordersPanel" style="display:none;">
+      <div class="toolbar">
+        <strong>Đơn hàng</strong>
+        <button class="btn btn-primary" onclick="openModal('orders')">+ Thêm mới</button>
+      </div>
+      <div id="ordersTable"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="itemModal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="modalTitle">Thêm mới</h3>
+        <button class="close-btn" onclick="closeModal()">×</button>
+      </div>
+      <form id="itemForm" onsubmit="submitForm(event)">
+        <div class="form-grid" id="formFields"></div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const state = { activeTab: 'products', products: [], customers: [], orders: [], editing: null, editingType: null };
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+
+    async function loadData() {
+      const [productsRes, customersRes, ordersRes] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/customers'),
+        fetch('/api/orders')
+      ]);
+      state.products = await productsRes.json();
+      state.customers = await customersRes.json();
+      state.orders = await ordersRes.json();
+      render();
+    }
+
+    function render() {
+      renderProducts();
+      renderCustomers();
+      renderOrders();
+    }
+
+    function switchTab(tab) {
+      state.activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+      document.getElementById('productsPanel').style.display = tab === 'products' ? 'block' : 'none';
+      document.getElementById('customersPanel').style.display = tab === 'customers' ? 'block' : 'none';
+      document.getElementById('ordersPanel').style.display = tab === 'orders' ? 'block' : 'none';
+    }
+
+    function renderProducts() {
+      const container = document.getElementById('productsTable');
+      if (!state.products.length) {
+        container.innerHTML = '<div class="empty">Chưa có sản phẩm.</div>';
+        return;
+      }
+      const rows = state.products.map(item => `
+        <tr>
+          <td>${item.id}</td>
+          <td><strong>${escapeHtml(item.name || '')}</strong><br><span style="color:#75695f;font-size:13px">${escapeHtml(item.description || '')}</span></td>
+          <td>${escapeHtml(item.product_type || '')}</td>
+          <td>${formatCurrency(item.price)}</td>
+          <td>${item.stock_quantity ?? 0}</td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-secondary" onclick="editItem('products', ${item.id})">Sửa</button>
+              <button class="btn btn-danger" onclick="deleteItem('products', ${item.id})">Xóa</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      container.innerHTML = `<table><thead><tr><th>ID</th><th>Tên</th><th>Loại</th><th>Giá</th><th>Tồn kho</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function renderCustomers() {
+      const container = document.getElementById('customersTable');
+      if (!state.customers.length) {
+        container.innerHTML = '<div class="empty">Chưa có khách hàng.</div>';
+        return;
+      }
+      const rows = state.customers.map(item => `
+        <tr>
+          <td>${item.id}</td>
+          <td><strong>${escapeHtml(item.name || '')}</strong></td>
+          <td>${escapeHtml(item.phone || '')}</td>
+          <td>${escapeHtml(item.zalo || '')}</td>
+          <td>${escapeHtml(item.registered_at || '')}</td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-secondary" onclick="editItem('customers', ${item.id})">Sửa</button>
+              <button class="btn btn-danger" onclick="deleteItem('customers', ${item.id})">Xóa</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+      container.innerHTML = `<table><thead><tr><th>ID</th><th>Tên</th><th>Điện thoại</th><th>Zalo</th><th>Ngày đăng ký</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function renderOrders() {
+      const container = document.getElementById('ordersTable');
+      if (!state.orders.length) {
+        container.innerHTML = '<div class="empty">Chưa có đơn hàng.</div>';
+        return;
+      }
+      const rows = state.orders.map(item => {
+        const customer = state.customers.find(c => c.id === item.customer_id);
+        const product = state.products.find(p => p.id === item.product_id);
+        return `
+          <tr>
+            <td>${item.id}</td>
+            <td>${escapeHtml(customer ? customer.name : '')}</td>
+            <td>${escapeHtml(product ? product.name : '')}</td>
+            <td>${formatCurrency(item.amount)}</td>
+            <td>${escapeHtml(item.status || '')}</td>
+            <td>${escapeHtml(item.order_date || '')}</td>
+            <td>
+              <div class="actions">
+                <button class="btn btn-secondary" onclick="editItem('orders', ${item.id})">Sửa</button>
+                <button class="btn btn-danger" onclick="deleteItem('orders', ${item.id})">Xóa</button>
+              </div>
+            </td>
+          </tr>`;
+      }).join('');
+      container.innerHTML = `<table><thead><tr><th>ID</th><th>Khách hàng</th><th>Sản phẩm</th><th>Số tiền</th><th>Trạng thái</th><th>Ngày</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function formatCurrency(val) {
+      const number = Number(val || 0);
+      return number.toLocaleString('vi-VN') + '₫';
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function openModal(type) {
+      state.editingType = type;
+      state.editing = null;
+      document.getElementById('modalTitle').textContent = type === 'products' ? 'Thêm sản phẩm' : type === 'customers' ? 'Thêm khách hàng' : 'Thêm đơn hàng';
+      document.getElementById('formFields').innerHTML = buildFormFields(type);
+      document.getElementById('itemModal').classList.add('active');
+    }
+
+    function editItem(type, id) {
+      state.editingType = type;
+      state.editing = (type === 'products' ? state.products : type === 'customers' ? state.customers : state.orders).find(item => item.id === id);
+      document.getElementById('modalTitle').textContent = type === 'products' ? 'Sửa sản phẩm' : type === 'customers' ? 'Sửa khách hàng' : 'Sửa đơn hàng';
+      document.getElementById('formFields').innerHTML = buildFormFields(type, state.editing);
+      document.getElementById('itemModal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('itemModal').classList.remove('active');
+      state.editing = null;
+      state.editingType = null;
+    }
+
+    function buildFormFields(type, item = null) {
+      if (type === 'products') {
+        return `
+          <div class="form-row">
+            <div class="field"><label>Tên sản phẩm</label><input name="name" required value="${escapeAttribute(item?.name || '')}" /></div>
+            <div class="field"><label>Loại</label><select name="product_type"><option value="physical" ${item?.product_type === 'physical' ? 'selected' : ''}>physical</option><option value="digital" ${item?.product_type === 'digital' ? 'selected' : ''}>digital</option><option value="service" ${item?.product_type === 'service' ? 'selected' : ''}>service</option></select></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Giá</label><input name="price" type="number" min="0" step="1000" required value="${item?.price ?? ''}" /></div>
+            <div class="field"><label>Tồn kho</label><input name="stock_quantity" type="number" min="0" value="${item?.stock_quantity ?? ''}" /></div>
+          </div>
+          <div class="field"><label>Mô tả</label><textarea name="description">${escapeAttribute(item?.description || '')}</textarea></div>
+        `;
+      }
+      if (type === 'customers') {
+        return `
+          <div class="form-row">
+            <div class="field"><label>Tên khách hàng</label><input name="name" required value="${escapeAttribute(item?.name || '')}" /></div>
+            <div class="field"><label>Điện thoại</label><input name="phone" value="${escapeAttribute(item?.phone || '')}" /></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Zalo</label><input name="zalo" value="${escapeAttribute(item?.zalo || '')}" /></div>
+            <div class="field"><label>Ngày đăng ký</label><input name="registered_at" value="${escapeAttribute(item?.registered_at || '')}" /></div>
+          </div>
+        `;
+      }
+      const customerOptions = state.customers.map(c => `<option value="${c.id}" ${item?.customer_id === c.id ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+      const productOptions = state.products.map(p => `<option value="${p.id}" ${item?.product_id === p.id ? 'selected' : ''}>${escapeHtml(p.name)} (${escapeHtml(p.product_type)})</option>`).join('');
+      return `
+        <div class="form-row">
+          <div class="field"><label>Khách hàng</label><select name="customer_id" required>${customerOptions || '<option value="">Chưa có khách hàng</option>'}</select></div>
+          <div class="field"><label>Sản phẩm</label><select name="product_id" required>${productOptions || '<option value="">Chưa có sản phẩm</option>'}</select></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Số tiền</label><input name="amount" type="number" min="0" step="1000" required value="${item?.amount ?? ''}" /></div>
+          <div class="field"><label>Trạng thái</label><select name="status"><option value="pending" ${item?.status === 'pending' ? 'selected' : ''}>pending</option><option value="paid" ${item?.status === 'paid' ? 'selected' : ''}>paid</option><option value="cancelled" ${item?.status === 'cancelled' ? 'selected' : ''}>cancelled</option></select></div>
+        </div>
+        <div class="field"><label>Ngày đặt</label><input name="order_date" value="${escapeAttribute(item?.order_date || '')}" /></div>
+      `;
+    }
+
+    function escapeAttribute(value) {
+      return String(value ?? '').replace(/"/g, '&quot;');
+    }
+
+    async function submitForm(event) {
+      event.preventDefault();
+      const form = event.target;
+      const data = Object.fromEntries(new FormData(form).entries());
+      if (state.editingType === 'products') {
+        data.price = Number(data.price);
+        data.stock_quantity = Number(data.stock_quantity || 0);
+      }
+      if (state.editingType === 'orders') {
+        data.customer_id = Number(data.customer_id);
+        data.product_id = Number(data.product_id);
+        data.amount = Number(data.amount);
+      }
+      const method = state.editing ? 'PUT' : 'POST';
+      const url = state.editing ? `/api/${state.editingType}/${state.editing.id}` : `/api/${state.editingType}`;
+      const response = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.error || 'Có lỗi xảy ra');
+        return;
+      }
+      closeModal();
+      await loadData();
+      alert(result.message || 'Lưu thành công');
+    }
+
+    async function deleteItem(type, id) {
+      if (!confirm('Bạn có chắc muốn xóa?')) return;
+      const response = await fetch(`/api/${type}/${id}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) {
+        alert(result.error || 'Xóa thất bại');
+        return;
+      }
+      await loadData();
+      alert(result.message || 'Xóa thành công');
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

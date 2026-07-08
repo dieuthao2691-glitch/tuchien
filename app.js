@@ -531,10 +531,18 @@ function openPaymentModal(serviceName, price) {
         const cleanMessage = serviceSlug + '_';
         payMessage.textContent = cleanMessage;
         
-        // Set dynamic VietQR code image source using MB Bank (970422), STK 123456789
-        const qrUrl = `https://img.vietqr.io/image/MB-123456789-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(cleanMessage)}&accountName=TUC%20HIEN`;
+        // Use the local static QR file as the payment QR for the service modal.
+        const qrUrl = 'http://localhost:8000/qr-vietqr-sepay.png';
         if (qrImage) qrImage.src = qrUrl;
-        if (btnDownloadQr) btnDownloadQr.href = qrUrl;
+        if (btnDownloadQr) {
+            const absoluteQrUrl = qrUrl;
+            btnDownloadQr.href = absoluteQrUrl;
+            btnDownloadQr.setAttribute('download', 'tuchien-vietqr.png');
+            btnDownloadQr.onclick = (event) => {
+                event.preventDefault();
+                window.open(absoluteQrUrl, '_blank', 'noopener,noreferrer');
+            };
+        }
         
         const payPhoneInput = document.getElementById('pay-phone');
         if (payPhoneInput) {
@@ -547,10 +555,17 @@ function openPaymentModal(serviceName, price) {
                 const updatedMessage = serviceSlug + '_' + sdt;
                 payMessage.textContent = updatedMessage;
                 
-                // Update VietQR dynamic image and download link as phone number changes
-                const updatedQrUrl = `https://img.vietqr.io/image/MB-123456789-compact2.jpg?amount=${price}&addInfo=${encodeURIComponent(updatedMessage)}&accountName=TUC%20HIEN`;
-                if (qrImage) qrImage.src = updatedQrUrl;
-                if (btnDownloadQr) btnDownloadQr.href = updatedQrUrl;
+                // Keep the same QR image while updating the transfer note shown in the form.
+                if (qrImage) qrImage.src = qrUrl;
+                if (btnDownloadQr) {
+                    const absoluteQrUrl = qrUrl;
+                    btnDownloadQr.href = absoluteQrUrl;
+                    btnDownloadQr.setAttribute('download', 'tuchien-vietqr.png');
+                    btnDownloadQr.onclick = (event) => {
+                        event.preventDefault();
+                        window.open(absoluteQrUrl, '_blank', 'noopener,noreferrer');
+                    };
+                }
             });
         }
         

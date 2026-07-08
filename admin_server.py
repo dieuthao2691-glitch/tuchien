@@ -32,8 +32,11 @@ class AdminHandler(BaseHTTPRequestHandler):
         if parsed.path == '/':
             self.serve_file('index.html')
             return
-        if parsed.path == '/admin':
+        if parsed.path in ('/admin', '/admin/'):
             self.serve_file('admin.html')
+            return
+        if parsed.path in ('/payment', '/payment/'):
+            self.serve_file('payment.html')
             return
         if parsed.path.startswith('/api/'):
             self.handle_api_get(parsed)
@@ -47,7 +50,12 @@ class AdminHandler(BaseHTTPRequestHandler):
             self.handle_sepay_webhook()
             return
         if parsed.path.startswith('/api/'):
-            self.handle_api_post(parsed)
+            try:
+                self.handle_api_post(parsed)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                send_json(self, 500, {'error': 'Internal server error', 'detail': str(e)})
             return
         print('POST not found for path:', parsed.path)
         send_json(self, 404, {'error': 'Not found'})
@@ -100,7 +108,9 @@ class AdminHandler(BaseHTTPRequestHandler):
                     customer_id = row['id']
                 else:
                     cur = conn.cursor()
-                    cur.execute('INSERT INTO customers (name, phone) VALUES (?, ?)', (phone, phone))
+                    from datetime import datetime
+                    registered_at = datetime.utcnow().isoformat() + 'Z'
+                    cur.execute('INSERT INTO customers (name, phone, zalo, registered_at) VALUES (?, ?, ?, ?)', (phone, phone, '', registered_at))
                     conn.commit()
                     customer_id = cur.lastrowid
 
@@ -267,7 +277,9 @@ class AdminHandler(BaseHTTPRequestHandler):
             send_json(self, 400, {'error': 'Bad request'})
             return
         resource = parts[1]
+        print('API post headers:', dict(self.headers))
         data = self.read_json()
+        print('Parsed JSON body:', data)
         # special create_checkout endpoint for landing payment flow
         if resource == 'create_checkout':
             # expected: name, phone, email, service_name, price, product_id(optional)
@@ -296,8 +308,11 @@ class AdminHandler(BaseHTTPRequestHandler):
                     customer_id = cur.lastrowid
 
                 # create pending order
+                from datetime import datetime
+                order_date = datetime.utcnow().isoformat() + 'Z'
+                print('Creating checkout order:', {'customer_id': customer_id, 'product_id': product_id, 'price': price, 'order_date': order_date})
                 cur.execute('INSERT INTO orders (customer_id, product_id, amount, status, order_date) VALUES (?, ?, ?, ?, ?)', (
-                    customer_id, int(product_id) if product_id else None, price, 'pending', None
+                    customer_id, int(product_id) if product_id else None, price, 'pending', order_date
                 ))
                 conn.commit()
                 order_id = cur.lastrowid
@@ -389,7 +404,9 @@ class AdminHandler(BaseHTTPRequestHandler):
 
     def read_json(self):
         length = int(self.headers.get('Content-Length', '0'))
+        print('read_json length:', length)
         body = self.rfile.read(length) if length else b'{}'
+        print('read_json raw body:', body)
         return json.loads(body.decode('utf-8')) if body else {}
 
     def fetch_products(self):

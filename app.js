@@ -531,8 +531,8 @@ function openPaymentModal(serviceName, price) {
         const cleanMessage = serviceSlug + '_';
         payMessage.textContent = cleanMessage;
         
-        // Use the local static QR file as the payment QR for the service modal.
-        const qrUrl = 'http://localhost:8000/qr-vietqr-sepay.png';
+        // Use the local static QR file from the same server.
+        const qrUrl = '/qr-vietqr-sepay.png';
         if (qrImage) qrImage.src = qrUrl;
         if (btnDownloadQr) {
             const absoluteQrUrl = qrUrl;
@@ -569,24 +569,9 @@ function openPaymentModal(serviceName, price) {
             });
         }
         
-        // Prefer opening a dedicated payment page so there is a URL to share/bookmark
-        // Create a checkout session on the server, then navigate to the returned payment URL
-        fetch('/api/create_checkout', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: '', phone: '', email: '', service_name: serviceName, price: price })
-        }).then(r => r.json()).then(data => {
-            if (data && data.payment_url) {
-                window.location.href = data.payment_url;
-            } else {
-                // fallback to modal if server fails
-                generateCaptcha();
-                openModal('payment-modal');
-            }
-        }).catch(err => {
-            generateCaptcha();
-            openModal('payment-modal');
-        });
+        // Hiển thị modal thanh toán để người dùng nhập thông tin trước khi tạo đơn
+        generateCaptcha();
+        openModal('payment-modal');
     }
 }
 

@@ -14,6 +14,11 @@
     .btn{padding:10px 12px;border-radius:8px;background:#9e6f55;color:#fff;border:none;cursor:pointer}
     .muted{color:#75695f}
     .hidden{display:none}
+    .status-box{margin-top:20px;padding:18px;border-radius:14px;border:1px solid transparent;box-shadow:0 14px 30px rgba(0,0,0,.08);background:#fff}
+    .status-box.success{border-color:#9ecf97;background:#eaf7eb;color:#214d28}
+    .status-box.error{border-color:#e1a2a2;background:#fde8e8;color:#7b2525}
+    .status-box h3{margin-top:0;margin-bottom:8px;font-size:1.2rem}
+    .status-box p{margin:0; line-height:1.6}
   </style>
 </head>
 <body>
@@ -24,34 +29,52 @@
     <div class="qr">
       <img id="qrImage" class="qr-img" src="qr-vietqr-sepay.png" alt="QR thanh toán" />
       <div class="info">
+        <div><strong>Gói/Dịch vụ:</strong> <span id="serviceName"></span></div>
         <div><strong>Số tiền:</strong> <span id="amount"></span></div>
         <div><strong>Ghi chú chuyển khoản:</strong> <span id="note"></span></div>
-        <div style="height:10px"></div>
-        <div id="actions"><button id="btnPaid" class="btn">Tôi đã chuyển tiền</button></div>
+          <div style="height:10px"></div>
+          <div id="actions">
+            <button id="btnOpenQr" class="btn" style="margin-right:8px;background:#5a8a6a">Mở QR</button>
+            <button id="btnCopyNote" class="btn" style="margin-right:8px;background:#7d6b5f">Sao chép ghi chú</button>
+            <button id="btnPaid" class="btn">Tôi đã chuyển tiền</button>
+          </div>
       </div>
     </div>
-    <div id="thankyou" class="hidden">
-      <h3>Cảm ơn bạn!</h3>
-      <p>Thanh toán đã hoàn tất. Chúng tôi sẽ liên hệ lại sớm.</p>
+    <div id="resultBox" class="status-box hidden">
+      <h3 id="resultTitle"></h3>
+      <p id="resultText"></p>
+      <button id="resultClose" class="btn">Đóng</button>
     </div>
   </div>
-
   <script>
     function qs(key){
       return new URLSearchParams(window.location.search).get(key);
     }
-    const orderId = qs('order_id');
+    let orderId = qs('order_id');
     const amountEl = document.getElementById('amount');
     const noteEl = document.getElementById('note');
     const summary = document.getElementById('summary');
     const btnPaid = document.getElementById('btnPaid');
-    const thank = document.getElementById('thankyou');
+    const btnOpenQr = document.getElementById('btnOpenQr');
+    const btnCopyNote = document.getElementById('btnCopyNote');
 
-    async function loadOrder(){
-      if (!orderId) return;
+    const resultBox = document.getElementById('resultBox');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultText = document.getElementById('resultText');
+    const resultClose = document.getElementById('resultClose');
+    const serviceNameEl = document.getElementById('serviceName');
+
+    async function getOrder() {
+      if (!orderId) return null;
       const res = await fetch('/api/orders');
+      if (!res.ok) return null;
       const orders = await res.json();
-      const o = orders.find(x=>String(x.id)===String(orderId));
+      return orders.find(x => String(x.id) === String(orderId));
+    }
+
+    async function loadOrder() {
+      if (!orderId) return;
+      const o = await getOrder();
       if (!o) {
         summary.textContent = 'Đơn không tìm thấy.';
         return;
@@ -59,31 +82,122 @@
       amountEl.textContent = Number(o.amount || 0).toLocaleString('vi-VN') + '₫';
       noteEl.textContent = `Đơn#${o.id}`;
       summary.textContent = `Trạng thái: ${o.status}`;
-      if (o.status === 'success' || o.status === 'paid'){
+      if (o.status === 'success' || o.status === 'paid') {
         showThankyou();
+        return;
+      }
+      if (o.status === 'cancelled') {
+        showFailure('Thanh toán thất bại', 'Đơn hàng đã bị hủy. Nếu bạn cần hỗ trợ, vui lòng liên hệ với chúng tôi.');
+        return;
+      }
+      hideResult();
+    }
+
+    // Open QR in new tab
+    if (btnOpenQr) btnOpenQr.addEventListener('click', () => {
+      window.open('/qr-vietqr-sepay.png', '_blank', 'noopener');
+    });
+
+    // Copy transfer note to clipboard
+    async function copyNote() {
+      const text = noteEl.textContent || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        const prev = btnCopyNote.textContent;
+        btnCopyNote.textContent = 'Đã sao chép';
+        setTimeout(() => btnCopyNote.textContent = prev, 1500);
+      } catch (e) {
+        alert('Không thể sao chép tự động. Vui lòng bôi đen và sao chép thủ công.');
+      }
+    }
+    if (btnCopyNote) btnCopyNote.addEventListener('click', copyNote);
+
+    function showResult(type, title, message) {
+      resultBox.classList.remove('hidden');
+      resultBox.classList.toggle('success', type === 'success');
+      resultBox.classList.toggle('error', type === 'error');
+      resultTitle.textContent = title;
+      resultText.textContent = message;
+    }
+
+    function showThankyou() {
+      document.getElementById('actions').classList.add('hidden');
+      summary.textContent = 'Thanh toán thành công';
+      showResult('success', 'Thanh toán thành công', 'Chúng tôi đã nhận được thanh toán của bạn. Cảm ơn bạn đã sử dụng dịch vụ Túc Hiên.');
+    }
+
+    function showFailure(title, message) {
+      document.getElementById('actions').classList.remove('hidden');
+      summary.textContent = 'Thanh toán chưa hoàn thành';
+      showResult('error', title, message);
+    }
+
+    function hideResult() {
+      resultBox.classList.add('hidden');
+    }
+
+    async function createOrderFromParams() {
+      const service = qs('service');
+      const price = Number(qs('price')) || 0;
+      if (!service || !price) {
+        return;
+      }
+      summary.textContent = 'Đang tạo đơn thanh toán...';
+      const res = await fetch('/api/create_checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: '', phone: '', email: '', service_name: service, price })
+      });
+      if (!res.ok) {
+        summary.textContent = 'Không thể tạo đơn thanh toán. Vui lòng thử lại sau.';
+        return;
+      }
+      const data = await res.json();
+      if (data.order_id) {
+        history.replaceState(null, '', `/payment?order_id=${data.order_id}`);
+        orderId = data.order_id;
+        await loadOrder();
       }
     }
 
-    function showThankyou(){
-      thank.classList.remove('hidden');
-      document.getElementById('actions').classList.add('hidden');
-      summary.textContent = 'Thanh toán thành công';
-      // small popup
-      alert('Cảm ơn bạn! Thanh toán đã ghi nhận.');
-    }
-
-    // Manual 'I've paid' button triggers a check (useful for manual transfers)
-    btnPaid.addEventListener('click', async ()=>{
+    btnPaid.addEventListener('click', async () => {
       btnPaid.disabled = true;
+      const original = btnPaid.textContent;
       btnPaid.textContent = 'Đang kiểm tra...';
-      await loadOrder();
+      // do an immediate check then inform user
+      const o = await getOrder();
+      if (!o) {
+        showFailure('Không tìm thấy đơn', 'Không thể tìm thấy đơn hàng. Vui lòng tải lại trang hoặc thử lại sau.');
+      } else if (o.status === 'success' || o.status === 'paid') {
+        showThankyou();
+      } else {
+        showFailure('Chưa nhận được chuyển khoản', 'Hệ thống vẫn chưa ghi nhận thanh toán. Nếu bạn đã chuyển khoản, vui lòng đợi vài phút và thử lại.');
+      }
       btnPaid.disabled = false;
-      btnPaid.textContent = 'Tôi đã chuyển tiền';
+      btnPaid.textContent = original;
     });
 
+    resultClose.addEventListener('click', () => {
+      hideResult();
+    });
+
+    async function initializePage() {
+      serviceNameEl.textContent = qs('service') || 'Dịch vụ Túc Hiên';
+      const priceParam = Number(qs('price')) || 0;
+      amountEl.textContent = priceParam ? priceParam.toLocaleString('vi-VN') + '₫' : '';
+      noteEl.textContent = '';
+      if (orderId) {
+        await loadOrder();
+      } else {
+        await createOrderFromParams();
+      }
+    }
+
     // poll status
-    setInterval(loadOrder,3000);
-    loadOrder();
+    setInterval(() => {
+      if (orderId) loadOrder();
+    }, 3000);
+    initializePage();
   </script>
 </body>
 </html>

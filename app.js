@@ -504,7 +504,7 @@ function copyText(elementId, btn) {
     });
 }
 
-function openPaymentModal(serviceName, price) {
+function openPaymentModal(serviceName, price, customerName = '', customerPhone = '') {
     const payServiceName = document.getElementById('pay-service-name');
     const payServicePrice = document.getElementById('pay-service-price');
     const payMessage = document.getElementById('pay-message');
@@ -569,9 +569,14 @@ function openPaymentModal(serviceName, price) {
             });
         }
         
-        // Hiển thị modal thanh toán để người dùng nhập thông tin trước khi tạo đơn
-        generateCaptcha();
-        openModal('payment-modal');
+        // Chuyển tới trang thanh toán riêng với thông tin dịch vụ và giá
+        const params = new URLSearchParams({
+            service: serviceName,
+            price: String(price),
+        });
+        if (customerName) params.set('name', customerName);
+        if (customerPhone) params.set('phone', customerPhone);
+        window.location.href = `/payment?${params.toString()}`;
     }
 }
 
@@ -643,16 +648,8 @@ function handleTourSubmit(event) {
     
     closeModal('tour-modal');
     
-    // Open payment modal for Tour
-    openPaymentModal(`Tour Vườn Thảo Dược Ngok Linh (${date})`, 2000000);
-    
-    // Pre-fill name and phone in payment form
-    const payName = document.getElementById('pay-name');
-    const payPhone = document.getElementById('pay-phone');
-    if (payName) payName.value = name;
-    if (payPhone) {
-        payPhone.value = phone;
-    }
+    // Open dedicated payment page for Tour and preserve contact info when possible
+    openPaymentModal(`Tour Vườn Thảo Dược Ngok Linh (${date})`, 2000000, name, phone);
     document.getElementById('tourForm').reset();
 }
 

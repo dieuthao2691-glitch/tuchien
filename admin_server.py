@@ -290,22 +290,20 @@ class AdminHandler(BaseHTTPRequestHandler):
             price = float(data.get('price') or 0)
             product_id = data.get('product_id')
 
-            # basic validation
-            if not phone:
-                send_json(self, 400, {'error': 'Phone is required'})
-                return
-
+            # allow anonymous checkout when phone is not yet available
+            customer_id = None
             with db_connect() as conn:
                 cur = conn.cursor()
-                row = cur.execute('SELECT id FROM customers WHERE phone=?', (phone,)).fetchone()
-                if row:
-                    customer_id = row['id']
-                else:
-                    from datetime import datetime
-                    registered_at = datetime.utcnow().isoformat() + 'Z'
-                    cur.execute('INSERT INTO customers (name, phone, zalo, registered_at) VALUES (?, ?, ?, ?)', (name or phone, phone, '', registered_at))
-                    conn.commit()
-                    customer_id = cur.lastrowid
+                if phone:
+                    row = cur.execute('SELECT id FROM customers WHERE phone=?', (phone,)).fetchone()
+                    if row:
+                        customer_id = row['id']
+                    else:
+                        from datetime import datetime
+                        registered_at = datetime.utcnow().isoformat() + 'Z'
+                        cur.execute('INSERT INTO customers (name, phone, zalo, registered_at) VALUES (?, ?, ?, ?)', (name or phone, phone, '', registered_at))
+                        conn.commit()
+                        customer_id = cur.lastrowid
 
                 # create pending order
                 from datetime import datetime
@@ -425,27 +423,38 @@ class AdminHandler(BaseHTTPRequestHandler):
             return [dict(r) for r in rows]
 
     def create_order(self, data):
-        customer_id = int(data.get('customer_id'))
-        product_id = int(data.get('product_id'))
+        customer_id = data.get('customer_id')
+        product_id = data.get('product_id')
         amount = float(data.get('amount', 0))
         status = data.get('status', 'pending')
         order_date = data.get('order_date') or None
         if order_date is None:
             from datetime import datetime
             order_date = datetime.utcnow().isoformat() + 'Z'
+        if customer_id is not None:
+            try:
+                customer_id = int(customer_id)
+            except (TypeError, ValueError):
+                customer_id = None
+        if product_id is not None:
+            try:
+                product_id = int(product_id)
+            except (TypeError, ValueError):
+                product_id = None
         with db_connect() as conn:
             cur = conn.cursor()
-            product = cur.execute('SELECT product_type, stock_quantity FROM products WHERE id=?', (product_id,)).fetchone()
-            if not product:
-                send_json(self, 400, {'error': 'Product not found'})
-                return
-            if product['product_type'] == 'physical':
-                if product['stock_quantity'] is None:
-                    product['stock_quantity'] = 0
-                if int(product['stock_quantity']) <= 0:
-                    send_json(self, 400, {'error': 'Out of stock'})
+            if product_id is not None:
+                product = cur.execute('SELECT product_type, stock_quantity FROM products WHERE id=?', (product_id,)).fetchone()
+                if not product:
+                    send_json(self, 400, {'error': 'Product not found'})
                     return
-                cur.execute('UPDATE products SET stock_quantity = stock_quantity - 1 WHERE id=?', (product_id,))
+                if product['product_type'] == 'physical':
+                    if product['stock_quantity'] is None:
+                        product['stock_quantity'] = 0
+                    if int(product['stock_quantity']) <= 0:
+                        send_json(self, 400, {'error': 'Out of stock'})
+                        return
+                    cur.execute('UPDATE products SET stock_quantity = stock_quantity - 1 WHERE id=?', (product_id,))
             cur.execute('INSERT INTO orders (customer_id, product_id, amount, status, order_date) VALUES (?, ?, ?, ?, ?)', (
                 customer_id, product_id, amount, status, order_date
             ))

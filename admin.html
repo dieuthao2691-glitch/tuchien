@@ -18,6 +18,8 @@
       --danger: #b94a48;
       --shadow: 0 10px 25px rgba(0,0,0,.08);
     }
+    .status-banner { display:block; margin-bottom: 16px; padding: 14px 16px; border-radius: 14px; background: #fff4e6; color: #7a4a2d; border: 1px solid #e9d4b7; }
+    .status-banner.hidden { display:none; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--text); }
     .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
@@ -57,6 +59,7 @@
 <body>
   <div class="container">
     <div class="live-banner">Phiên bản admin mới: dữ liệu đang được lấy trực tiếp từ brain.db</div>
+    <div id="errorBanner" class="status-banner hidden"><span id="errorMessage">Không thể tải dữ liệu.</span> <button id="retryBtn" class="btn btn-secondary" style="margin-left:12px">Thử lại</button></div>
     <div class="topbar">
       <div>
         <h1>Admin Panel</h1>
@@ -131,18 +134,43 @@
     });
 
     let lastOrdersJson = '';
-    async function loadData() {
-      const [productsRes, customersRes, ordersRes] = await Promise.all([
-        fetch('/api/products'),
-        fetch('/api/customers'),
-        fetch('/api/orders')
-      ]);
-      state.products = await productsRes.json();
-      state.customers = await customersRes.json();
-      state.orders = await ordersRes.json();
-      // track last orders snapshot for polling updates
-      try { lastOrdersJson = JSON.stringify(state.orders); } catch(e) { lastOrdersJson = ''; }
-      render();
+    async function loadData(attempt = 1) {
+      const errorBanner = document.getElementById('errorBanner');
+      const errorMessage = document.getElementById('errorMessage');
+      const retryBtn = document.getElementById('retryBtn');
+      // hide banner while attempting
+      errorBanner.classList.add('hidden');
+      retryBtn.disabled = true;
+      try {
+        const [productsRes, customersRes, ordersRes] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/customers'),
+          fetch('/api/orders')
+        ]);
+        if (!productsRes.ok || !customersRes.ok || !ordersRes.ok) {
+          throw new Error('Không thể tải dữ liệu admin. Vui lòng kiểm tra server API.');
+        }
+        state.products = await productsRes.json();
+        state.customers = await customersRes.json();
+        state.orders = await ordersRes.json();
+        try { lastOrdersJson = JSON.stringify(state.orders); } catch(e) { lastOrdersJson = ''; }
+        render();
+      } catch (error) {
+        const message = error && error.message ? error.message : 'Lỗi không xác định khi tải admin.';
+        errorMessage.textContent = message;
+        errorBanner.classList.remove('hidden');
+        document.getElementById('productsTable').innerHTML = '<div class="empty">Không thể tải sản phẩm.</div>';
+        document.getElementById('customersTable').innerHTML = '<div class="empty">Không thể tải khách hàng.</div>';
+        document.getElementById('ordersTable').innerHTML = '<div class="empty">Không thể tải đơn hàng.</div>';
+        // enable retry and set handler
+        retryBtn.disabled = false;
+        retryBtn.onclick = () => {
+          retryBtn.disabled = true;
+          // exponential backoff next attempt
+          const delay = Math.min(30000, 500 * Math.pow(2, attempt-1));
+          setTimeout(() => loadData(attempt+1), delay);
+        };
+      }
     }
 
     function render() {

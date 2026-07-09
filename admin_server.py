@@ -17,6 +17,43 @@ def db_connect():
     return conn
 
 
+def ensure_admin_schema():
+    with db_connect() as conn:
+        cur = conn.cursor()
+        cur.execute('''
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  product_type TEXT,
+  price REAL DEFAULT 0,
+  description TEXT,
+  stock_quantity INTEGER
+);
+''')
+        cur.execute('''
+CREATE TABLE IF NOT EXISTS customers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  phone TEXT,
+  zalo TEXT,
+  registered_at TEXT
+);
+''')
+        cur.execute('''
+CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id INTEGER,
+  product_id INTEGER,
+  amount REAL DEFAULT 0,
+  status TEXT,
+  order_date TEXT,
+  FOREIGN KEY(customer_id) REFERENCES customers(id),
+  FOREIGN KEY(product_id) REFERENCES products(id)
+);
+''')
+        conn.commit()
+
+
 def send_json(handler, status, payload):
     body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
     handler.send_response(status)
@@ -37,6 +74,9 @@ class AdminHandler(BaseHTTPRequestHandler):
             return
         if parsed.path in ('/payment', '/payment/'):
             self.serve_file('payment.html')
+            return
+        if parsed.path in ('/health', '/healthz'):
+            send_json(self, 200, {'status': 'ok'})
             return
         if parsed.path.startswith('/api/'):
             self.handle_api_get(parsed)
@@ -477,6 +517,7 @@ class AdminHandler(BaseHTTPRequestHandler):
 
 
 if __name__ == '__main__':
+    ensure_admin_schema()
     server = ThreadingHTTPServer(('0.0.0.0', 8001), AdminHandler)
     print('Admin server running on http://localhost:8001/admin')
     server.serve_forever()

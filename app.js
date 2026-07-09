@@ -511,14 +511,16 @@ function openPaymentModal(serviceName, price, customerName = '', customerPhone =
     const qrImage = document.getElementById('qr-code-image');
     const btnDownloadQr = document.getElementById('btn-download-qr');
     
-    // Build a banking-safe slug from serviceName (ASCII only, max 20 chars)
+    // Build a banking-safe slug from serviceName (ASCII only, words separated by _)
     function makeSlug(name) {
         return name
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '') // remove diacritics
-            .replace(/[^a-zA-Z0-9]/g, '')    // keep alphanumeric only
-            .toUpperCase()
-            .substring(0, 20);
+            .replace(/[^a-zA-Z0-9\s]/g, '')    // keep alphanumeric and spaces
+            .trim()
+            .replace(/\s+/g, '_')
+            .toLowerCase()
+            .substring(0, 40);
     }
     
     const serviceSlug = makeSlug(serviceName);
@@ -571,7 +573,8 @@ function openPaymentModal(serviceName, price, customerName = '', customerPhone =
         
         // Chuyển tới trang thanh toán riêng với thông tin dịch vụ và giá
         const params = new URLSearchParams({
-            service: serviceName,
+            service: serviceSlug,
+            label: serviceName,
             price: String(price),
         });
         if (customerName) params.set('name', customerName);

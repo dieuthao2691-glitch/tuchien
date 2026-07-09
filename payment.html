@@ -255,7 +255,9 @@
         summary.textContent = 'Đơn không tìm thấy.';
         return;
       }
-      amountEl.textContent = Number(o.amount || 0).toLocaleString('vi-VN') + '₫';
+      if (!amountEl.textContent) {
+        amountEl.textContent = Number(o.amount || 0).toLocaleString('vi-VN') + '₫';
+      }
       summary.textContent = `Trạng thái: ${o.status}`;
       if (o.status === 'success' || o.status === 'paid') {
         showThankyou();
@@ -325,9 +327,11 @@
         const params = new URLSearchParams();
         params.set('order_id', data.order_id);
         params.set('service', serviceSlug);
+        params.set('price', String(price));
         if (serviceLabel) params.set('label', serviceLabel);
         if (customerName) params.set('name', customerName);
         if (customerPhone) params.set('phone', customerPhone);
+        if (customerEmail) params.set('email', customerEmail);
         history.replaceState(null, '', `/payment?${params.toString()}`);
         orderId = data.order_id;
         await loadOrder();
@@ -378,7 +382,7 @@
       paymentNoteEl.textContent = buildPaymentNote(serviceSlug || serviceLabel, customerName, customerPhone);
       generateCaptcha();
 
-      if (!serviceSlug || !priceParam) {
+      if (!serviceSlug && !orderId) {
         summary.textContent = 'Vui lòng quay lại trang trước để chọn dịch vụ và giá trước khi xác nhận thông tin.';
         return;
       }

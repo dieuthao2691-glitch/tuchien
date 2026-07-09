@@ -222,9 +222,9 @@ class AdminHandler(BaseHTTPRequestHandler):
                     rows.append(f"<tr><td>{it['id']}</td><td>{it.get('customer_id') or ''}</td><td>{it.get('product_id') or ''}</td><td>{int(it.get('amount') or 0):,}₫</td><td>{it.get('status') or ''}</td><td>{it.get('order_date') or ''}</td><td><div class=\"actions\"><button class=\"btn btn-secondary\">Sửa</button><button class=\"btn btn-danger\">Xóa</button></div></td></tr>")
                 return '<table><thead><tr><th>ID</th><th>Khách hàng</th><th>Sản phẩm</th><th>Số tiền</th><th>Trạng thái</th><th>Ngày</th><th></th></tr></thead><tbody>' + ''.join(rows) + '</tbody></table>'
 
-            html = html.replace('<div id="productsTable"></div>', render_products_table(products))
-            html = html.replace('<div id="customersTable"></div>', render_customers_table(customers))
-            html = html.replace('<div id="ordersTable"></div>', render_orders_table(orders))
+            html = html.replace('<div id="productsTable"></div>', f'<div id="productsTable">{render_products_table(products)}</div>')
+            html = html.replace('<div id="customersTable"></div>', f'<div id="customersTable">{render_customers_table(customers)}</div>')
+            html = html.replace('<div id="ordersTable"></div>', f'<div id="ordersTable">{render_orders_table(orders)}</div>')
             # inject initial state for client JS
             initial = json.dumps({'products': products, 'customers': customers, 'orders': orders}, ensure_ascii=False)
             inject = f"<script>window.__INITIAL_STATE__ = {initial};</script>"

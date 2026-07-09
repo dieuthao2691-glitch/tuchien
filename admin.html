@@ -138,6 +138,11 @@
       const errorBanner = document.getElementById('errorBanner');
       const errorMessage = document.getElementById('errorMessage');
       const retryBtn = document.getElementById('retryBtn');
+      const fallbackState = window.__INITIAL_STATE__ ? {
+        products: window.__INITIAL_STATE__.products || [],
+        customers: window.__INITIAL_STATE__.customers || [],
+        orders: window.__INITIAL_STATE__.orders || []
+      } : null;
       // hide banner while attempting
       errorBanner.classList.add('hidden');
       retryBtn.disabled = true;
@@ -159,14 +164,22 @@
         const message = error && error.message ? error.message : 'Lỗi không xác định khi tải admin.';
         errorMessage.textContent = message;
         errorBanner.classList.remove('hidden');
-        document.getElementById('productsTable').innerHTML = '<div class="empty">Không thể tải sản phẩm.</div>';
-        document.getElementById('customersTable').innerHTML = '<div class="empty">Không thể tải khách hàng.</div>';
-        document.getElementById('ordersTable').innerHTML = '<div class="empty">Không thể tải đơn hàng.</div>';
-        // enable retry and set handler
+        if (fallbackState) {
+          state.products = fallbackState.products;
+          state.customers = fallbackState.customers;
+          state.orders = fallbackState.orders;
+          render();
+        } else {
+          const productsContainer = getOrCreateTableContainer('productsPanel', 'productsTable');
+          const customersContainer = getOrCreateTableContainer('customersPanel', 'customersTable');
+          const ordersContainer = getOrCreateTableContainer('ordersPanel', 'ordersTable');
+          if (productsContainer) productsContainer.innerHTML = '<div class="empty">Không thể tải sản phẩm.</div>';
+          if (customersContainer) customersContainer.innerHTML = '<div class="empty">Không thể tải khách hàng.</div>';
+          if (ordersContainer) ordersContainer.innerHTML = '<div class="empty">Không thể tải đơn hàng.</div>';
+        }
         retryBtn.disabled = false;
         retryBtn.onclick = () => {
           retryBtn.disabled = true;
-          // exponential backoff next attempt
           const delay = Math.min(30000, 500 * Math.pow(2, attempt-1));
           setTimeout(() => loadData(attempt+1), delay);
         };
@@ -189,6 +202,7 @@
 
     function renderProducts() {
       const container = document.getElementById('productsTable');
+      if (!container) return;
       if (!state.products.length) {
         container.innerHTML = '<div class="empty">Chưa có sản phẩm.</div>';
         return;
@@ -213,6 +227,7 @@
 
     function renderCustomers() {
       const container = document.getElementById('customersTable');
+      if (!container) return;
       if (!state.customers.length) {
         container.innerHTML = '<div class="empty">Chưa có khách hàng.</div>';
         return;
@@ -236,7 +251,8 @@
     }
 
     function renderOrders() {
-      const container = document.getElementById('ordersTable');
+      const container = getOrCreateTableContainer('ordersPanel', 'ordersTable');
+      if (!container) return;
       if (!state.orders.length) {
         container.innerHTML = '<div class="empty">Chưa có đơn hàng.</div>';
         return;
@@ -275,6 +291,30 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function getOrCreateTableContainer(panelId, tableId) {
+      let container = document.getElementById(tableId);
+      if (container) return container;
+      const panel = document.getElementById(panelId);
+      if (!panel) return null;
+      const existingTable = panel.querySelector('table');
+      if (existingTable) {
+        container = document.createElement('div');
+        container.id = tableId;
+        panel.insertBefore(container, existingTable);
+        container.appendChild(existingTable);
+        return container;
+      }
+      container = document.createElement('div');
+      container.id = tableId;
+      const toolbar = panel.querySelector('.toolbar');
+      if (toolbar && toolbar.nextSibling) {
+        panel.insertBefore(container, toolbar.nextSibling);
+      } else {
+        panel.appendChild(container);
+      }
+      return container;
     }
 
     function openModal(type) {
